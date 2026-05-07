@@ -95,13 +95,20 @@ function appendMsg(role, content, extras={}) {
     const qr = document.createElement('div');
     qr.className = 'quick-replies';
     extras.quickReplies.forEach(text => {
-      const chip = document.createElement('button');
-      chip.className = 'qr-chip';
+    const chip = document.createElement('button');
+    chip.className = 'qr-chip';
+    if (text === '__LEAD_FORM__') {
+      chip.textContent = '📋 Llenar formulario';
+      chip.onclick = () => { qr.remove(); showLeadCapture(); };
+    } else if (text === '__LEAD_CHAT__') {
+      chip.textContent = '💬 Enviar mis datos';
+      chip.onclick = () => { qr.remove(); sendMessage('Quiero enviar mis datos de contacto'); };
+    } else {
       chip.textContent = text;
       chip.onclick = () => { qr.remove(); sendMessage(text); };
-      qr.appendChild(chip);
-    });
-    bub.appendChild(qr);
+    }
+    qr.appendChild(chip);
+});
   }
   wrap.appendChild(av);
   wrap.appendChild(bub);
@@ -151,8 +158,10 @@ function detectLeadIntent(text) {
 
 function detectQRs(reply) {
   const low = reply.toLowerCase();
+  if (low.includes('cotización formal') || low.includes('ejecutivo') || low.includes('te contacte') || low.includes('coordinar')) {
+    return ['__LEAD_FORM__', '__LEAD_CHAT__', 'Seguir conversando'];
+  }
   if (low.includes('active') && low.includes('recovery')) return ['Área Active','Área Recovery','Área Performance','Servicios'];
-  if (low.includes('cotiz')||low.includes('ejecutivo')) return ['Enviar mis datos','Otra consulta'];
   if (low.includes('reparac')||low.includes('servicio')) return ['Reparaciones','Mantenciones','Capacitaciones'];
   return [];
 }
