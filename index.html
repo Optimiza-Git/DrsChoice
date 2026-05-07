@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dr's Choice — Asistente Virtual</title>
+<title>Dr's Choice — Maida, tu Asistente Virtual</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -117,7 +117,7 @@ function showTyping() {
   wrap.id = 'typing-indicator';
   const av = document.createElement('div');
   av.className = 'avatar bot';
-  av.textContent = 'DC';
+  av.textContent = 'M';
   const tb = document.createElement('div');
   tb.className = 'typing-bubble';
   tb.innerHTML = '<span></span><span></span><span></span>';
@@ -222,7 +222,7 @@ document.getElementById('msgInput').addEventListener('input', function() {
 
 window.addEventListener('load', () => {
   setTimeout(() => {
-    appendMsg('bot','¡Hola! 👋 Soy el asistente virtual de Dr\'s Choice, empresa especializada en tecnología médica con más de 34 años de experiencia.\n\n¿En qué puedo ayudarte hoy?',{quickReplies:['Productos de Rehabilitación','Equipos para Adultos Mayores','Rendimiento Deportivo','Servicios técnicos','Solicitar cotización']});
+    appendMsg('bot','¡Hola! 👋 Soy Maida, tu asistente virtual de Dr\'s Choice, empresa especializada en tecnología médica con más de 34 años de experiencia.\n\n¿En qué puedo ayudarte hoy?',{quickReplies:['Productos de Rehabilitación','Equipos para Adultos Mayores','Rendimiento Deportivo','Servicios técnicos','Solicitar cotización']});
   }, 600);
 });
 </script>
