@@ -21,7 +21,7 @@ app.add_middleware(
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 800
+MAX_TOKENS = 1200
 
 KB = load_kb()
 SYSTEM_PROMPT = build_system_prompt(KB)
