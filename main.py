@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-3-5-haiku-20241022"
 MAX_TOKENS = 800
 
 KB = load_kb()
