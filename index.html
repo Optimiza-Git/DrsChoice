@@ -168,12 +168,7 @@ async function sendMessage(text) {
   try {
     const reply = await callBackend(text);
     hideTyping();
-    if (detectLeadIntent(text)||detectLeadIntent(reply)) {
-      appendMsg('bot', reply);
-      setTimeout(()=>showLeadCapture(), 400);
-    } else {
-      appendMsg('bot', reply, {quickReplies: detectQRs(reply)});
-    }
+    appendMsg('bot', reply, {quickReplies: detectQRs(reply)});
   } catch(e) {
     hideTyping();
     appendMsg('bot','Hubo un problema de conexión. Escríbenos al +56 9 6159 8525 💬');
