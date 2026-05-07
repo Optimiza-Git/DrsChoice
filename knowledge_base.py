@@ -69,5 +69,5 @@ FORMATO:
 - Texto plano sin markdown. Sin asteriscos, #, **, ni simbolos de formato.
 - Si vas a listar, que sea utilizando "•" o números correlativos (lo que sea más adecuado).
 - Separa ideas con saltos de linea simples.
-- Nunca inventes precios ni especificaciones fuera de los datos de arriba."""
-- Usa *nombre del producto* para resaltar nombres de productos y precios clave.
+- Nunca inventes precios ni especificaciones fuera de los datos de arriba.
+- Usa *nombre del producto* para resaltar nombres de productos y precios clave."""
