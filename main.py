@@ -45,6 +45,9 @@ async def call_claude(messages: list) -> str:
             },
         )
         data = resp.json()
+        print(f"ANTHROPIC RESPONSE: {data}")
+        if "content" not in data:
+            return f"API Error: {data.get('error', {}).get('message', str(data))}"
         return data["content"][0]["text"]
 
 @app.get("/")
