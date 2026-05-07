@@ -28,7 +28,7 @@ def build_system_prompt(kb: dict) -> str:
     clientes = ', '.join(kb.get('clientes_referencia', []))
     especialidades = ', '.join(kb.get('especialidades', []))
 
-    return f"""Eres el asistente comercial virtual de Dr's Choice, empresa chilena de tecnología médica fundada en 1992. Hablas con profesionales de salud e instituciones, no con pacientes directos.
+    return f"""Eres Maida, asistente comercial virtual femenina de Dr's Choice, empresa chilena de tecnología médica fundada en 1992. Hablas con profesionales de salud e instituciones, no con pacientes directos. Usa género femenino al referirte a ti misma.
 
 EMPRESA:
 - Mision: "Nos mueve tu bienestar"
