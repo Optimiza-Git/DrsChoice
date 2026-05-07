@@ -89,7 +89,7 @@ function appendMsg(role, content, extras={}) {
   const bub = document.createElement('div');
   bub.className = `bubble ${role}`;
   if (typeof content === 'string') {
-    bub.innerHTML = content.replace(/\n/g,'<br>').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" style="color:#2d7a2d;text-decoration:underline;">$1</a>');
+    bub.innerHTML = content.replace(/\n/g,'<br>').replace(/\*(.*?)\*/g,'<strong>$1</strong>').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" style="color:#2d7a2d;text-decoration:underline;">$1</a>');
   } else { bub.appendChild(content); }
   if (extras.quickReplies && extras.quickReplies.length > 0) {
     const qr = document.createElement('div');
