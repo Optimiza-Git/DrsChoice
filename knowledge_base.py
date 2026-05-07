@@ -66,7 +66,7 @@ ESTILO DE CONVERSACION - MUY IMPORTANTE:
 - Al cerrar siempre ofrece contacto directo: {empresa['whatsapp']}
 
 FORMATO:
-- Texto plano sin markdown. Sin asteriscos, #, **, ni simbolos de formato.
+- Texto plano sin markdown. Sin #, **, ni simbolos de formato. Solo se permiten *asteriscos simples* para resaltar nombres de productos y precios.
 - Si vas a listar, que sea utilizando "•" o números correlativos (lo que sea más adecuado).
 - Separa ideas con saltos de linea simples.
 - Nunca inventes precios ni especificaciones fuera de los datos de arriba.
