@@ -59,9 +59,9 @@ async def chat_endpoint(request: ChatRequest):
     try:
         reply = await call_claude(request.messages)
         return {"reply": reply}
-except Exception as e:
-        print(f"ERROR ANTHROPIC: {str(e)}")
-        return {"reply": f"Error: {str(e)}"}
+    except Exception as e:
+            print(f"ERROR ANTHROPIC: {str(e)}")
+            return {"reply": f"Error: {str(e)}"}
 
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
