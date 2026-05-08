@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dr's Choice — Maida, tu Asistente Virtual</title>
+<title>Dr's Choice — José, tu Asistente Virtual</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -54,9 +54,9 @@ textarea#msgInput::placeholder{color:#a09890}
 </head>
 <body>
 <div class="chat-header">
-  <div class="logo-mark">M</div>
+  <div class="logo-mark">J</div>
   <div class="header-info">
-    <div class="name">Maida</div>
+    <div class="name">José</div>
     <div class="subtitle">Asistente virtual de Dr's Choice</div>
   </div>
   <div class="status-dot"></div>
@@ -85,7 +85,7 @@ function appendMsg(role, content, extras={}) {
   wrap.className = `msg ${role}`;
   const av = document.createElement('div');
   av.className = `avatar ${role==='bot'?'bot':'user-av'}`;
-  av.textContent = role==='bot'?'DC':'Tú';
+  av.textContent = role==='bot'?'J':'Tú';
   const bub = document.createElement('div');
   bub.className = `bubble ${role}`;
   if (typeof content === 'string') {
@@ -226,7 +226,7 @@ document.getElementById('msgInput').addEventListener('input', function() {
 
 window.addEventListener('load', () => {
   setTimeout(() => {
-    appendMsg('bot','¡Hola! 👋 Soy Maida, asistente virtual de Dr\'s Choice. ¿En qué puedo ayudarte?',{quickReplies:['Productos de Rehabilitación','Equipos para Adultos Mayores','Rendimiento Deportivo','Servicios técnicos','Solicitar cotización']});
+    appendMsg('bot','¡Hola! 👋 Soy José, asistente virtual de Dr\'s Choice. ¿En qué puedo ayudarte?',{quickReplies:['Productos de Rehabilitación','Equipos para Adultos Mayores','Rendimiento Deportivo','Servicios técnicos','Solicitar cotización']});
   }, 600);
 });
 </script>
