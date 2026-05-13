@@ -1,0 +1,33 @@
+{
+  "_descripcion": "Tiers estratégicos de marcas Dr's Choice. Define cómo José posiciona cada marca en una conversación comercial.",
+  "_ultima_revision": "2026-05-13",
+
+  "tiers": {
+    "tier_1_ancla": {
+      "nombre": "Marca Ancla",
+      "descripcion": "Abre puertas. Validación técnica fuerte. José las menciona primero para establecer credibilidad.",
+      "como_usar_en_venta": "Mencionar proactivamente para generar confianza institucional. Son las marcas que el cliente reconoce.",
+      "marcas": ["HUR", "NORAXON", "CORTEX", "HPCOSMOS", "STORZ", "OSSUR"]
+    },
+    "tier_2_proyecto": {
+      "nombre": "Marca de Proyecto",
+      "descripcion": "Complementa y permite soluciones integrales. José las introduce cuando hay un proyecto más amplio.",
+      "como_usar_en_venta": "Introducir cuando el cliente ya mostró interés. Sirven para ampliar el ticket y ofrecer solución completa.",
+      "marcas": ["SWIMEX", "WATTBIKE", "AMEDTEC", "HASOMED", "NEOFECT", "MOTOMED"]
+    },
+    "tier_3_soporte": {
+      "nombre": "Marca de Soporte / Licitación",
+      "descripcion": "Cumple especificaciones técnicas. Aporta respaldo en procesos de licitación.",
+      "como_usar_en_venta": "Útiles cuando el cliente pide especificaciones concretas o está en proceso de licitación formal.",
+      "marcas": ["HM NORM", "HANDIMOVE", "ITO", "NICE", "POWERBREATHE", "DERMALAB", "CARE PUMP", "KINESIX", "ZEBRIS"]
+    },
+    "tier_4_tactica": {
+      "nombre": "Marca Táctica",
+      "descripcion": "Ventas por volumen. No estratégica para posicionamiento de marca.",
+      "como_usar_en_venta": "No mencionar primero. Útiles para completar pedidos o cuando el cliente las busca específicamente.",
+      "marcas": ["ECOPOSTURAL", "SHUA", "HOLWAY", "ROMPA", "THOUGHTTECHNOLOGY", "THE MAT", "VAVE"]
+    }
+  },
+
+  "instruccion_jose": "Al recomendar productos, prioriza marcas Tier 1 para establecer credibilidad. Introduce Tier 2 cuando hay interés de proyecto. Menciona Tier 3 si el cliente pregunta por especificaciones o licitación. Evita empezar con Tier 4 salvo que el cliente las pida explícitamente."
+}

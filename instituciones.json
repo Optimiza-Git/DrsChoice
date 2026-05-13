@@ -1,0 +1,73 @@
+{
+  "_descripcion": "Instituciones y cuentas clave de Dr's Choice. José las reconoce y adapta su tono cuando el cliente menciona una.",
+  "_ultima_revision": "2026-05-13",
+
+  "segmentos": {
+    "clinica_hospital": {
+      "nombre": "Clínicas y Hospitales",
+      "tipo_compra": "institucional",
+      "proceso": "Licitación o compra directa según monto. Múltiples tomadores de decisión.",
+      "instituciones": [
+        "Clínica MEDS", "RedSalud", "Clínica Alemana", "Clínica Las Condes",
+        "Clínica Santa María", "UC Christus", "Clínica Dávila", "Clínica Indisa",
+        "Clínica Bupa Santiago", "Clínica Bupa Regiones",
+        "Clínica Universidad de los Andes",
+        "Hospital Clínico Universidad de Chile", "Hospital de Salvador",
+        "Hospital Sótero del Río", "Hospital Barros Luco Trudeau",
+        "Calvo Mackenna", "Hospital San Juan de Dios",
+        "Hospital Gustavo Fricke", "Hospital Regional de Concepción",
+        "Hospital Regional de Antofagasta", "Hospital Dr. Hernán Henríquez Aravena"
+      ]
+    },
+    "mutualidad": {
+      "nombre": "Mutualidades",
+      "tipo_compra": "institucional_licitacion",
+      "proceso": "Proceso formal de licitación. Presupuesto anual. Requiere cumplir especificaciones técnicas.",
+      "instituciones": ["Mutual de Seguridad", "ACHS", "IST"]
+    },
+    "universidad": {
+      "nombre": "Universidades e Institutos",
+      "tipo_compra": "institucional_academico",
+      "proceso": "Proceso interno de adquisición. Puede ser rápido si hay proyecto definido.",
+      "instituciones": [
+        "Pontificia Universidad Católica de Chile", "Universidad de Chile",
+        "Universidad de Santiago (USACH)", "Universidad de Concepción",
+        "Universidad Austral de Chile", "INACAP", "Duoc UC",
+        "Universidad Santo Tomás", "Universidad San Sebastián",
+        "Universidad Mayor", "Universidad Andrés Bello",
+        "Universidad del Desarrollo", "Universidad Finis Terrae"
+      ]
+    },
+    "residencia": {
+      "nombre": "Residencias de Adulto Mayor",
+      "tipo_compra": "institucional_o_privado",
+      "proceso": "Decisión más rápida. Foco en soluciones para adulto mayor (área ACTIVE).",
+      "instituciones": [
+        "Senior Suites", "Acalis", "Las Hortensias",
+        "MAVI Senior Living", "Villa Soleares"
+      ]
+    },
+    "centro_entrenamiento": {
+      "nombre": "Centros de Entrenamiento y Alto Rendimiento",
+      "tipo_compra": "institucional_o_proyecto",
+      "proceso": "Decisión técnica. Foco en rendimiento humano (área PERFORMANCE).",
+      "instituciones": [
+        "Centro de Alto Rendimiento (CAR)",
+        "Club Universidad Católica (fútbol)", "Colo-Colo (área médica/deportiva)",
+        "Universidad de Chile (fútbol)", "Centro Deportivo UC",
+        "Centro Deportivo UDD", "Centro Deportivo UNAB", "Coch"
+      ]
+    },
+    "municipalidad": {
+      "nombre": "Municipalidades",
+      "tipo_compra": "licitacion_publica",
+      "proceso": "ChileCompra obligatorio. Presupuesto acotado. Foco en adulto mayor y deporte comunitario.",
+      "instituciones": [
+        "Las Condes", "Lo Barnechea", "Providencia", "Vitacura",
+        "Santiago", "Ñuñoa", "Huechuraba", "Colina", "La Reina", "Independencia"
+      ]
+    }
+  },
+
+  "instruccion_jose": "Si el cliente menciona una institución de esta lista, José debe: (1) reconocerla sin exagerar ('conozco bien ese contexto'), (2) adaptar el tono al tipo de compra del segmento, (3) si es licitación, mencionar proactivamente que Dr's Choice tiene experiencia en ese proceso."
+}

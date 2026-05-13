@@ -1,0 +1,35 @@
+{
+  "_descripcion": "Parámetros de configuración del sistema Dr's Choice. Editar aquí sin tocar el código.",
+  "_ultima_revision": "2026-05-13",
+  "modelo": {
+    "llm": "claude-sonnet-4-6",
+    "embeddings": "voyage-3",
+    "nota": "Cambiar solo si Anthropic lanza una versión nueva recomendada"
+  },
+  "rag": {
+    "top_k": 6,
+    "max_chars_por_chunk_web": 3000,
+    "nota": "top_k: cuántos productos recupera Hermes por consulta. Subir si José parece ignorar productos relevantes. Bajar si el contexto es demasiado largo."
+  },
+  "tokens": {
+    "jose": 150,
+    "maida": 250,
+    "claudia": 200,
+    "cipher": 150,
+    "llm_as_judge": 400,
+    "cliente_sintetico": 100,
+    "max_tokens_railway": 300,
+    "nota": "jose y max_tokens_railway deben ser consistentes. clasificador y claudia_prod son llamadas adicionales por turno.",
+    "clasificador": 120,
+    "claudia_prod": 200
+  },
+  "memoria": {
+    "ventana_mensajes": 20,
+    "nota": "Número máximo de mensajes que José recuerda por sesión. Subir = más contexto, más costo. Bajar = más rápido, más barato."
+  },
+  "seguridad": {
+    "cipher_umbral_regex": 80,
+    "cipher_umbral_llm": 80,
+    "nota": "cipher_umbral_regex: score asignado si regex detecta patrón. cipher_umbral_llm: score mínimo para bloquear cuando Cipher LLM evalúa."
+  }
+}

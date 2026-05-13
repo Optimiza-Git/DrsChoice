@@ -1,0 +1,19 @@
+# URLs de Dr's Choice para web scraping
+# Una URL por línea. Líneas con # son comentarios.
+# Este archivo es la fuente de verdad para el scraping web.
+# Agregar o quitar URLs aquí actualiza el KB automáticamente.
+
+# Páginas principales
+https://drchoice.cl
+https://drchoice.cl/nosotros
+
+# Áreas de negocio
+https://drchoice.cl/active
+https://drchoice.cl/recovery
+https://drchoice.cl/performance
+
+# Servicios
+https://drchoice.cl/servicios
+https://drchoice.cl/mantenciones
+https://drchoice.cl/capacitaciones
+https://drchoice.cl/arriendos

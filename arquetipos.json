@@ -1,0 +1,148 @@
+{
+  "_descripcion": "Arquetipos de clientes Dr's Choice. Editar aquí para actualizar el comportamiento de José.",
+  "_fuente": "Matriz de Segmentos y Arquetipos — Dr's Choice",
+  "_ultima_revision": "2026-05-13",
+
+  "segmentos": {
+    "institucional_complejo": ["medico_especialista", "kinesiologo", "enfermera", "jefe_equipos_medicos", "jefe_compras", "gerente_hospital"],
+    "institucional_medio":    ["docente_investigador", "director_carrera", "nutricionista", "enfermera"],
+    "alto_rendimiento":       ["fisiologo_deportivo", "kinesiologo", "entrenador", "nutricionista"],
+    "operador_pequeno":       ["kinesiologo", "terapeuta_ocupacional", "nutricionista"],
+    "independiente":          ["kinesiologo", "terapeuta_ocupacional", "nutricionista"]
+  },
+
+  "arquetipos": {
+    "medico_especialista": {
+      "nombre": "El Clínico Exigente",
+      "rol": "Médico especialista (traumatólogo, neurólogo, fisiatra, etc.)",
+      "mentalidad": "Esto tiene que funcionar clínicamente, no me interesa improvisar",
+      "objetivos": ["Mejorar resultados clínicos", "Tener respaldo y evidencia"],
+      "dolores": ["Equipamiento que no cumple expectativas", "Falta de soporte serio"],
+      "miedos": ["Comprar algo poco validado", "Perder credibilidad frente a pacientes y equipo"],
+      "como_habla": "Directo, poco tiempo. '¿Qué evidencia tiene esto?', '¿Quién más lo usa?'",
+      "que_debe_hacer_jose": "Ir al grano. Validar con casos y uso clínico. No vender humo.",
+      "trigger_escalamiento": "Pregunta por resultados clínicos o quiere validar decisión",
+      "score_tipico": 90
+    },
+    "kinesiologo": {
+      "nombre": "El Operador Técnico",
+      "rol": "Kinesiólogo clínico o deportivo",
+      "mentalidad": "Necesito algo que funcione bien en el día a día",
+      "objetivos": ["Eficiencia en tratamiento", "Buen flujo de pacientes"],
+      "dolores": ["Equipos poco prácticos", "Falta de espacio"],
+      "miedos": ["Equipos difíciles de usar", "Baja adherencia del paciente"],
+      "como_habla": "Práctico. '¿Esto sirve para...?', '¿Qué tan fácil es usarlo?'",
+      "que_debe_hacer_jose": "Traducir a uso real. Hablar de aplicabilidad práctica.",
+      "trigger_escalamiento": "Describe flujo de pacientes o tiene problema concreto a resolver",
+      "score_tipico": 65
+    },
+    "terapeuta_ocupacional": {
+      "nombre": "El Funcional",
+      "rol": "Terapeuta ocupacional",
+      "mentalidad": "Esto tiene que mejorar la vida real del paciente",
+      "objetivos": ["Funcionalidad y autonomía del paciente"],
+      "dolores": ["Soluciones poco adaptadas", "Falta de versatilidad"],
+      "miedos": ["Equipos poco aplicables a casos reales"],
+      "como_habla": "Más humano que técnico. '¿Esto sirve para rehabilitación funcional?'",
+      "que_debe_hacer_jose": "Enfocar en impacto práctico. Evitar tecnicismo excesivo.",
+      "trigger_escalamiento": "Describe tipo de paciente o busca adaptar solución",
+      "score_tipico": 55
+    },
+    "fisiologo_deportivo": {
+      "nombre": "El Optimizador de Performance",
+      "rol": "Fisiólogo deportivo / Especialista en rendimiento humano",
+      "mentalidad": "Quiero medir, optimizar y diferenciarme",
+      "objetivos": ["Performance", "Data y medición", "Diferenciación competitiva"],
+      "dolores": ["Falta de herramientas avanzadas", "Limitación para diferenciar servicio"],
+      "miedos": ["Quedarse atrás vs la competencia"],
+      "como_habla": "Técnico pero enfocado en rendimiento. '¿Qué métricas entrega?'",
+      "que_debe_hacer_jose": "Hablar de performance y diferenciación. No solo rehabilitación.",
+      "trigger_escalamiento": "Habla de alto rendimiento o busca ventaja competitiva",
+      "score_tipico": 70
+    },
+    "nutricionista": {
+      "nombre": "El Complementador",
+      "rol": "Nutricionista clínico o deportivo",
+      "mentalidad": "Esto tiene que integrarse con mi tratamiento",
+      "objetivos": ["Mejorar resultados globales del paciente"],
+      "dolores": ["Falta de herramientas complementarias"],
+      "miedos": ["Que no agregue valor real a su práctica"],
+      "como_habla": "Exploratorio. '¿Cómo se complementa esto con lo que ya hago?'",
+      "que_debe_hacer_jose": "Conectar con otros usos. Mostrar integración con nutrición.",
+      "trigger_escalamiento": "Busca complementar sus servicios actuales",
+      "score_tipico": 50
+    },
+    "enfermera": {
+      "nombre": "La Ejecutora Crítica",
+      "rol": "Enfermera / Técnico paramédico",
+      "mentalidad": "Esto tiene que funcionar en la práctica diaria sin complicaciones",
+      "objetivos": ["Operación fluida", "Seguridad en el uso"],
+      "dolores": ["Equipos poco intuitivos", "Problemas operativos en turno"],
+      "miedos": ["Errores en uso", "Equipos complejos de operar"],
+      "como_habla": "Concreta. '¿Es fácil de usar?', '¿Necesita calibración?'",
+      "que_debe_hacer_jose": "Simplicidad ante todo. Uso práctico. Poca jerga técnica.",
+      "trigger_escalamiento": "Pregunta por implementación o protocolo de uso",
+      "score_tipico": 45
+    },
+    "jefe_equipos_medicos": {
+      "nombre": "El Guardián Técnico",
+      "rol": "Jefe de Equipos Médicos / Ingeniero Biomédico",
+      "mentalidad": "Esto tiene que ser robusto, mantenible y justificable",
+      "objetivos": ["Estandarización", "Durabilidad", "Soporte técnico confiable"],
+      "dolores": ["Equipos que fallan", "Mala postventa"],
+      "miedos": ["Problemas de mantención", "Falta de soporte local"],
+      "como_habla": "Técnico. '¿Qué soporte tienen?', '¿Vida útil?', '¿Repuestos disponibles?'",
+      "que_debe_hacer_jose": "Enfatizar soporte técnico local. Mostrar confiabilidad y trayectoria.",
+      "trigger_escalamiento": "Pregunta por servicio técnico o mantención preventiva",
+      "score_tipico": 60
+    },
+    "jefe_compras": {
+      "nombre": "El Controlador de Riesgo",
+      "rol": "Jefe de Compras / Abastecimiento institucional",
+      "mentalidad": "No puedo equivocarme con proveedores",
+      "objetivos": ["Buen proceso de compra", "Minimizar riesgo"],
+      "dolores": ["Proveedores poco claros", "Mala experiencia previa"],
+      "miedos": ["Problemas contractuales", "Sobreprecio", "Incumplimiento"],
+      "como_habla": "Formal. 'Envíame información', 'Necesito cotización formal', 'ChileCompra'",
+      "que_debe_hacer_jose": "Ordenar información. Generar confianza. Hablar de proceso, no de producto.",
+      "trigger_escalamiento": "Pide documentos, cotización formal o menciona licitación",
+      "score_tipico": 40
+    },
+    "gerente_hospital": {
+      "nombre": "El Decisor Estratégico",
+      "rol": "Gerente / Director de Hospital o Clínica",
+      "mentalidad": "Esto tiene que tener impacto y sentido económico",
+      "objetivos": ["ROI claro", "Impacto en operación", "Justificación ante directorio"],
+      "dolores": ["Presión financiera", "Múltiples stakeholders que convencer"],
+      "miedos": ["Mala inversión", "Bajo uso del equipamiento", "Críticas internas"],
+      "como_habla": "Alto nivel. '¿Qué impacto tiene esto?', '¿Cuál es el retorno?'",
+      "que_debe_hacer_jose": "Subir el nivel. No hablar de features sino de impacto y ROI.",
+      "trigger_escalamiento": "Habla de inversión, impacto institucional o justificación económica",
+      "score_tipico": 35
+    },
+    "docente_investigador": {
+      "nombre": "El Validador Académico",
+      "rol": "Docente universitario / Investigador clínico",
+      "mentalidad": "Esto tiene que ser técnicamente sólido y defendible académicamente",
+      "objetivos": ["Investigar", "Publicar", "Enseñar con herramientas válidas"],
+      "dolores": ["Falta de equipamiento adecuado", "Presupuesto limitado", "Procesos internos lentos"],
+      "miedos": ["Usar equipos poco validados", "No cumplir estándares académicos"],
+      "como_habla": "Técnico pero no comercial. '¿Esto está validado?', '¿Se usa en otras universidades?'",
+      "que_debe_hacer_jose": "Subir el nivel técnico pero claro. Validar con uso académico. Evitar enfoque comercial directo.",
+      "trigger_escalamiento": "Proyecto de investigación definido o necesidad de especificaciones técnicas",
+      "score_tipico": 72
+    },
+    "director_carrera": {
+      "nombre": "El Gestor Académico-Estratégico",
+      "rol": "Director de Carrera universitaria",
+      "mentalidad": "Esto tiene que tener sentido para la carrera completa",
+      "objetivos": ["Mejorar propuesta académica", "Diferenciar la carrera", "Justificar inversión institucional"],
+      "dolores": ["Presupuesto limitado", "Presión por acreditación", "Necesidad de modernización"],
+      "miedos": ["Invertir en algo poco utilizado", "No generar impacto real en alumnos"],
+      "como_habla": "Menos técnico, más estratégico. 'Queremos mejorar la carrera', 'Buscamos diferenciarnos'",
+      "que_debe_hacer_jose": "No entrar en detalle técnico de inmediato. Enfocar en impacto académico y diferenciación.",
+      "trigger_escalamiento": "Proyecto institucional o interés en equipamiento para múltiples usuarios",
+      "score_tipico": 38
+    }
+  }
+}

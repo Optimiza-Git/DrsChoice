@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Índice vectorial (se regenera al arrancar Railway)
+hermes_index.npy
+hermes_meta.json
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
