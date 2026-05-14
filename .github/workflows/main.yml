@@ -1,0 +1,35 @@
+name: Build Knowledge Base
+
+on:
+  push:
+    paths:
+      - 'pdfs/**'
+      - 'urls.txt'
+      - 'build_kb.py'
+      - 'brandbook.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pdfplumber requests beautifulsoup4
+
+      - name: Build knowledge base
+        run: python build_kb.py
+
+      - name: Commit and push updated KB
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add knowledge_base.json
+          git diff --staged --quiet || git commit -m "🤖 Auto-update knowledge_base.json [skip ci]"
+          git push
