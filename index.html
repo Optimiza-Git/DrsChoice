@@ -296,7 +296,7 @@
 
 <div id="chat">
   <div class="msg jose">
-    <div class="bubble">Hola 👋 Soy José de Dr's Choice. Estoy aquí para ayudarte a encontrar soluciones tecnológicas para salud, rehabilitación y bienestar.<br><br>¿Con qué especialidad trabajas?</div>
+    <div class="bubble">Hola 👋 Soy José, de Dr's Choice. ¿En qué te puedo ayudar?</div>
     <div class="msg-meta">José · ahora</div>
   </div>
 </div>
@@ -308,11 +308,13 @@
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </div>
-  <div class="footer-note">Dr's Choice — Nos mueve tu bienestar © 2026 · powered by Wirkun © 2026</div>
+  <div class="footer-note">© 2026 Dr's Choice · Nos mueve tu bienestar &nbsp;·&nbsp; powered by Wirkun</div>
 </div>
 
 <script>
-  const BACKEND_URL = "https://web-production-1ee67.up.railway.app";
+  const BACKEND_URL = "RAILWAY_URL_AQUI";
+  // ID único por sesión — evita que usuarios distintos compartan conversación
+  const SESSION_ID = "web_" + Math.random().toString(36).substring(2, 10);
 
   const chat    = document.getElementById("chat");
   const input   = document.getElementById("input");
@@ -365,7 +367,7 @@
       const res  = await fetch(`${BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history })
+        body: JSON.stringify({ messages: history, phone: SESSION_ID })
       });
       const data = await res.json();
       const reply = data.reply || "Lo siento, hubo un error. Intenta de nuevo.";
