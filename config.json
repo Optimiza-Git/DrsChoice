@@ -25,7 +25,8 @@
   },
   "memoria": {
     "ventana_mensajes": 20,
-    "nota": "Número máximo de mensajes que José recuerda por sesión. Subir = más contexto, más costo. Bajar = más rápido, más barato."
+    "nota": "ventana_mensajes: mensajes que José recuerda. session_timeout_horas: inactividad tras la cual la sesión se reinicia.",
+    "session_timeout_horas": 1
   },
   "seguridad": {
     "cipher_umbral_regex": 80,
