@@ -1,6 +1,6 @@
 {
   "_descripcion": "Parámetros de configuración del sistema Dr's Choice. Editar aquí sin tocar el código.",
-  "_ultima_revision": "2026-05-13",
+  "_ultima_revision": "2026-05-25",
   "modelo": {
     "llm": "claude-sonnet-4-6",
     "embeddings": "voyage-4-lite",
