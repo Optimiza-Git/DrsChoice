@@ -3,7 +3,7 @@
   "_ultima_revision": "2026-05-13",
   "modelo": {
     "llm": "claude-sonnet-4-6",
-    "embeddings": "voyage-3",
+    "embeddings": "voyage-4-lite",
     "nota": "Cambiar solo si Anthropic lanza una versión nueva recomendada"
   },
   "rag": {
