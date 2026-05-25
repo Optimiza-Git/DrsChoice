@@ -534,13 +534,23 @@ async def claudia_async(conv_id: int, historial: list, score_perfil: float):
 # - id de conversación en SQLite
 session_store: dict[str, dict] = {}
 
+SESSION_TIMEOUT_SEGUNDOS = 3600  # 1 hora — configurable en config.json
+
 def get_session(phone: str) -> dict:
+    ahora = datetime.now().timestamp()
+    # Si la sesión existe pero lleva más de 1 hora inactiva, la reiniciamos
+    if phone in session_store:
+        ultima = session_store[phone].get("ultima_actividad", ahora)
+        if ahora - ultima > SESSION_TIMEOUT_SEGUNDOS:
+            print(f"Session timeout para {phone} — reiniciando")
+            del session_store[phone]
     if phone not in session_store:
         session_store[phone] = {
             "historial": [],
             "score_perfil": 50.0,
             "conv_id": get_or_create_conv(phone),
-            "turno_n": 0
+            "turno_n": 0,
+            "ultima_actividad": ahora
         }
     return session_store[phone]
 
@@ -631,6 +641,7 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
 
         session["historial"].append({"role": "assistant", "content": reply})
         session["turno_n"] += 1
+        session["ultima_actividad"] = datetime.now().timestamp()
 
         # 5. Registramos en SQLite
         registrar_turno(session["conv_id"], session["turno_n"],
@@ -649,6 +660,47 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
     except Exception as e:
         print(f"ERROR /chat: {e}")
         return {"reply": f"Error interno: {str(e)}"}
+
+
+@app.get("/leads")
+def leads_endpoint():
+    """Resumen de leads capturados — para uso interno de Dr's Choice."""
+    con = sqlite3.connect(DB_PATH)
+    leads = con.execute("""
+        SELECT phone, iniciada_en, actualizada, score_perfil,
+               segmento, n_turnos, datos_lead
+        FROM conversaciones
+        WHERE es_lead = 1
+        ORDER BY actualizada DESC
+        LIMIT 50
+    """).fetchall()
+    con.close()
+
+    resultado = []
+    for row in leads:
+        datos = {}
+        try:
+            datos = json.loads(row[6]) if row[6] else {}
+        except Exception:
+            pass
+        resultado.append({
+            "phone": row[0],
+            "iniciada": row[1],
+            "actualizada": row[2],
+            "score_perfil": row[3],
+            "segmento": row[4],
+            "n_turnos": row[5],
+            "nombre": datos.get("nombre"),
+            "institucion": datos.get("institucion"),
+            "rol": datos.get("rol"),
+            "telefono": datos.get("telefono"),
+            "email": datos.get("email"),
+        })
+
+    return {
+        "total_leads": len(resultado),
+        "leads": resultado
+    }
 
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...),
