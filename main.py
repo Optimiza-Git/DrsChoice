@@ -688,11 +688,6 @@ async def whatsapp_webhook(
     firma        = request.headers.get("X-Twilio-Signature", "")
     url_solicitud = f"{PUBLIC_BASE_URL}{request.url.path}"
 
-    # DEBUG TEMPORAL — borrar estas 3 líneas una vez que todo funcione bien.
-    print(f"[DEBUG webhook] PUBLIC_BASE_URL='{PUBLIC_BASE_URL}'")
-    print(f"[DEBUG webhook] url_solicitud='{url_solicitud}'")
-    print(f"[DEBUG webhook] firma_recibida='{firma}'")
-
     if not twilio_validator.validate(url_solicitud, dict(form_data), firma):
         raise HTTPException(status_code=403, detail="Firma de Twilio inválida")
 
