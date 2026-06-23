@@ -49,6 +49,9 @@ TWILIO_ACCOUNT_SID     = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN      = os.environ.get("TWILIO_AUTH_TOKEN", "")
 # Mientras estés en el Sandbox, este valor es siempre: whatsapp:+14155238886
 TWILIO_WHATSAPP_NUMBER = os.environ.get("TWILIO_WHATSAPP_NUMBER", "")
+# Tu dominio público real de Railway, SIN slash al final.
+# Ej: https://web-production-90950.up.railway.app
+PUBLIC_BASE_URL        = os.environ.get("PUBLIC_BASE_URL", "")
 
 twilio_validator = RequestValidator(TWILIO_AUTH_TOKEN)
 twilio_client    = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
@@ -676,10 +679,15 @@ async def whatsapp_webhook(
 ):
     from twilio.twiml.messaging_response import MessagingResponse
 
-    # 1. Verificar que el mensaje realmente vino de Twilio
-    form_data = await request.form()
-    firma     = request.headers.get("X-Twilio-Signature", "")
-    if not twilio_validator.validate(str(request.url), dict(form_data), firma):
+    # 1. Verificar que el mensaje realmente vino de Twilio.
+    #    Usamos PUBLIC_BASE_URL en vez de request.url porque Railway está detrás
+    #    de un proxy: request.url a veces se reconstruye como "http://" aunque
+    #    Twilio llamó por "https://", y eso rompe la validación de firma aunque
+    #    el request sea legítimo.
+    form_data    = await request.form()
+    firma        = request.headers.get("X-Twilio-Signature", "")
+    url_solicitud = f"{PUBLIC_BASE_URL}{request.url.path}"
+    if not twilio_validator.validate(url_solicitud, dict(form_data), firma):
         raise HTTPException(status_code=403, detail="Firma de Twilio inválida")
 
     phone    = From.replace("whatsapp:", "")
