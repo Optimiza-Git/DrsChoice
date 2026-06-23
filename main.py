@@ -12,10 +12,12 @@ Agentes:
 import os, json, re, numpy as np, httpx, voyageai, sqlite3, asyncio
 from pathlib import Path
 from datetime import datetime
-from fastapi import FastAPI, Form, BackgroundTasks
+from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from twilio.request_validator import RequestValidator
+from twilio.rest import Client
 from knowledge_base import load_kb, build_system_prompt_base, construir_texto_chunk
 
 # ── Configuración ─────────────────────────────────────────────
@@ -41,6 +43,20 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 VOYAGE_API_KEY    = os.environ.get("VOYAGE_API_KEY", "")
+
+# ── Twilio (WhatsApp) ───────────────────────────────────────────
+TWILIO_ACCOUNT_SID     = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN      = os.environ.get("TWILIO_AUTH_TOKEN", "")
+# Mientras estés en el Sandbox, este valor es siempre: whatsapp:+14155238886
+TWILIO_WHATSAPP_NUMBER = os.environ.get("TWILIO_WHATSAPP_NUMBER", "")
+
+twilio_validator = RequestValidator(TWILIO_AUTH_TOKEN)
+twilio_client    = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+# Anti-duplicados: evita procesar dos veces el mismo mensaje si Twilio reintenta.
+# Se reinicia si Railway reinicia el proceso; suficiente para este volumen.
+_whatsapp_msgs_procesados: set[str] = set()
+
 KB                = load_kb()
 ARQUETIPOS        = json.load(open(Path(__file__).parent / "arquetipos.json", encoding="utf-8"))
 MARCAS            = json.load(open(Path(__file__).parent / "marcas.json", encoding="utf-8"))
@@ -385,13 +401,11 @@ CALIBRACIÓN DE TONO:
     else:
         tono = """PERFIL DETECTADO: Público general (paciente, familiar, cuidador o comprador).
 CALIBRACIÓN DE TONO:
-- Cálido, claro y sin asumir nada sobre el perfil del usuario.
-- NO preguntes por especialidad como primera pregunta — es excluyente.
-- Primera pregunta siempre abierta: ¿En qué te puedo ayudar? o ¿Qué estás buscando?
-- Solo pregunta por perfil profesional si el contexto lo justifica.
-- Habla de beneficios prácticos, no especificaciones técnicas.
-- Si requiere criterio clínico, sugiere hablar con su médico tratante.
-- Para compra directa, redirige a drchoice.cl
+- Cálido, empático y muy claro. Sin tecnicismos sin explicar.
+- Habla de beneficios en la vida diaria, no de especificaciones técnicas.
+- Pregunta qué necesidad tiene o para quién busca el producto.
+- Si la consulta requiere criterio clínico, sugiere hablar con su médico tratante.
+- Para compra directa, deriva a la tienda online o WhatsApp.
 """
 
     return f"""Eres José, la cara y voz de Dr's Choice — empresa chilena de tecnología médica.
@@ -416,11 +430,9 @@ NO los pidas todos de golpe — uno por turno, en el momento natural:
 CAPTURA DE LEAD — CRÍTICO:
 Cuando el interlocutor muestre interés concreto (pregunta por precio, disponibilidad,
 demo, o describe una necesidad específica), José debe:
-1. Responder la consulta primero — nunca cortar la info para pedir datos.
-2. Solo cuando hay interés concreto claro, preguntar UNA SOLA VEZ: "Para coordinar los detalles, ¿me puedes compartir
-   tu nombre, institución, teléfono (con código de área) y correo de contacto?"
-   Si el teléfono entregado no tiene el formato correcto (ej. +56 9 XXXX XXXX
-   o 9 dígitos para Chile), pídelo de nuevo amablemente antes de confirmar.
+1. Responder brevemente la consulta
+2. Inmediatamente preguntar: "Para coordinar los detalles, ¿me puedes compartir
+   tu nombre, institución y un teléfono o correo de contacto?"
 3. Cuando el usuario entrega sus datos, confirmar con: "Perfecto [nombre], quedó
    registrado. Un ejecutivo te contactará a la brevedad para [lo que pidió]."
    NO preguntar de nuevo qué necesita — ya lo dijo. La conversación puede
@@ -439,26 +451,6 @@ REGLAS UNIVERSALES:
 - No hagas diagnósticos médicos ni prometas resultados clínicos.
 - Si la consulta está fuera del rubro, dilo en una línea y redirige.
 - Formato: texto plano. *asteriscos* solo para nombres de productos.
-- Sin exclamaciones efusivas ("¡Excelente!", "¡Perfecto!", "¡Claro que sí!").
-  Tono directo y profesional. Eres un asistente útil, no un animador.
-
-STOCK, PLAZOS Y DISPONIBILIDAD — NUNCA INVENTAR:
-- NUNCA afirmes que hay stock si no está explícitamente en el contexto RAG.
-- NUNCA inventes plazos de entrega. Si no tienes el dato:
-  "Para confirmar stock y plazos, te pongo en contacto con un ejecutivo."
-- NUNCA confirmes disponibilidad de demo o visita sin tener esa información concreta.
-  Di: "Para coordinar una visita, un ejecutivo confirma disponibilidad."
-
-MARCAS COMPLEJAS — DERIVAR SIN RESPONDER TÉCNICO:
-Para Noraxon, Amedtec, Storz Medical, HP Cosmos, HUR, Wattbike, Swimex:
-NO respondas preguntas técnicas detalladas. Deriva siempre a ejecutivo:
-"Para especificaciones de [marca], lo mejor es un ejecutivo especializado. ¿Te coordino?"
-
-TIENDA ONLINE vs CATÁLOGO COMPLETO:
-- No todos los productos del catálogo están disponibles en la tienda online.
-- Nunca asumas disponibilidad online sin confirmación.
-- Para proyectos y cotizaciones formales, captura el lead.
-- Para compras online directas, redirige a drchoice.cl
 
 SCORE DE PERFIL ACTUAL: {score}/100
 {arquetipo_bloque}
@@ -534,23 +526,13 @@ async def claudia_async(conv_id: int, historial: list, score_perfil: float):
 # - id de conversación en SQLite
 session_store: dict[str, dict] = {}
 
-SESSION_TIMEOUT_SEGUNDOS = 3600  # 1 hora — configurable en config.json
-
 def get_session(phone: str) -> dict:
-    ahora = datetime.now().timestamp()
-    # Si la sesión existe pero lleva más de 1 hora inactiva, la reiniciamos
-    if phone in session_store:
-        ultima = session_store[phone].get("ultima_actividad", ahora)
-        if ahora - ultima > SESSION_TIMEOUT_SEGUNDOS:
-            print(f"Session timeout para {phone} — reiniciando")
-            del session_store[phone]
     if phone not in session_store:
         session_store[phone] = {
             "historial": [],
             "score_perfil": 50.0,
             "conv_id": get_or_create_conv(phone),
-            "turno_n": 0,
-            "ultima_actividad": ahora
+            "turno_n": 0
         }
     return session_store[phone]
 
@@ -641,7 +623,6 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
 
         session["historial"].append({"role": "assistant", "content": reply})
         session["turno_n"] += 1
-        session["ultima_actividad"] = datetime.now().timestamp()
 
         # 5. Registramos en SQLite
         registrar_turno(session["conv_id"], session["turno_n"],
@@ -661,60 +642,60 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
         print(f"ERROR /chat: {e}")
         return {"reply": f"Error interno: {str(e)}"}
 
+async def _procesar_whatsapp_en_bg(phone: str, user_msg: str):
+    """
+    Corre en segundo plano, DESPUÉS de que ya le respondimos algo vacío a Twilio.
+    Aquí se llama a Cipher + clasificador + Hermes + José, reusando chat_endpoint
+    tal cual, sin tocar su lógica interna.
+    """
+    try:
+        req    = ChatRequest(messages=[{"role": "user", "content": user_msg}], phone=phone)
+        result = await chat_endpoint(req, BackgroundTasks())
+        reply  = result.get("reply", "Lo siento, intenta de nuevo.")
+    except Exception as e:
+        print(f"ERROR /webhook/whatsapp (bg): {e}")
+        reply = "Disculpa, tuvimos un problema técnico. ¿Puedes intentar nuevamente en unos minutos?"
 
-@app.get("/leads")
-def leads_endpoint():
-    """Resumen de leads capturados — para uso interno de Dr's Choice."""
-    con = sqlite3.connect(DB_PATH)
-    leads = con.execute("""
-        SELECT phone, iniciada_en, actualizada, score_perfil,
-               segmento, n_turnos, datos_lead
-        FROM conversaciones
-        WHERE es_lead = 1
-        ORDER BY actualizada DESC
-        LIMIT 50
-    """).fetchall()
-    con.close()
+    try:
+        twilio_client.messages.create(
+            from_=TWILIO_WHATSAPP_NUMBER,
+            to=f"whatsapp:{phone}",
+            body=reply
+        )
+    except Exception as e:
+        print(f"ERROR enviando WhatsApp a {phone}: {e}")
 
-    resultado = []
-    for row in leads:
-        datos = {}
-        try:
-            datos = json.loads(row[6]) if row[6] else {}
-        except Exception:
-            pass
-        resultado.append({
-            "phone": row[0],
-            "iniciada": row[1],
-            "actualizada": row[2],
-            "score_perfil": row[3],
-            "segmento": row[4],
-            "n_turnos": row[5],
-            "nombre": datos.get("nombre"),
-            "institucion": datos.get("institucion"),
-            "rol": datos.get("rol"),
-            "telefono": datos.get("telefono"),
-            "email": datos.get("email"),
-        })
-
-    return {
-        "total_leads": len(resultado),
-        "leads": resultado
-    }
 
 @app.post("/webhook/whatsapp")
-async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...),
-                           background_tasks: BackgroundTasks = None):
+async def whatsapp_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    From: str = Form(...),
+    Body: str = Form(...),
+    MessageSid: str = Form(...),
+):
     from twilio.twiml.messaging_response import MessagingResponse
+
+    # 1. Verificar que el mensaje realmente vino de Twilio
+    form_data = await request.form()
+    firma     = request.headers.get("X-Twilio-Signature", "")
+    if not twilio_validator.validate(str(request.url), dict(form_data), firma):
+        raise HTTPException(status_code=403, detail="Firma de Twilio inválida")
+
     phone    = From.replace("whatsapp:", "")
     user_msg = Body.strip()
+
     if not user_msg:
         return PlainTextResponse(str(MessagingResponse()), media_type="text/xml")
 
-    req   = ChatRequest(messages=[{"role": "user", "content": user_msg}], phone=phone)
-    result = await chat_endpoint(req, background_tasks or BackgroundTasks())
-    reply  = result.get("reply", "Lo siento, intenta de nuevo.")
+    # 2. Evitar procesar el mismo mensaje dos veces (reintentos de Twilio)
+    if MessageSid in _whatsapp_msgs_procesados:
+        return PlainTextResponse(str(MessagingResponse()), media_type="text/xml")
+    _whatsapp_msgs_procesados.add(MessageSid)
 
-    twiml = MessagingResponse()
-    twiml.message(reply)
-    return PlainTextResponse(str(twiml), media_type="text/xml")
+    # 3. Disparamos el procesamiento real en background
+    background_tasks.add_task(_procesar_whatsapp_en_bg, phone, user_msg)
+
+    # 4. Respondemos a Twilio de inmediato; la respuesta real se manda después
+    #    por la API de Twilio (ver _procesar_whatsapp_en_bg).
+    return PlainTextResponse(str(MessagingResponse()), media_type="text/xml")
