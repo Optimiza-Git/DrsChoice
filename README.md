@@ -6,9 +6,10 @@ Deploy: Railway (backend) + Vercel (frontend)
 ## Arquitectura
 
 ```
-pdfs/                          ← Catálogos PDF del cliente (fuente de verdad)
+pdfs/                          ← Catálogos PDF del cliente
+data/                          ← Excels tabulares de productos
 urls.txt                       ← URLs de drchoice.cl a indexar
-brandbook.json       ← Datos estáticos: empresa, brandbook, servicios
+brandbook.json                 ← Datos estáticos: empresa, brandbook, servicios
 knowledge_base.json            ← Generado automáticamente ⚠️ no editar a mano
 build_kb.py                    ← Script que genera el KB desde PDFs + URLs
 main.py                        ← Backend FastAPI con RAG
@@ -21,6 +22,12 @@ knowledge_base.py              ← Prompt builder + utilidades RAG
 ### Agregar PDF nuevo
 1. Subir PDF a la carpeta `pdfs/`
 2. Hacer push → GitHub Actions regenera `knowledge_base.json` automáticamente
+
+### Agregar Excel tabular de productos
+
+1. Subir el Excel a `data/`
+2. Idealmente nombrarlo `Drs Choice Tabular Completa.xlsx`
+3. Hacer push → GitHub Actions regenera `knowledge_base.json`
 
 ### Agregar URL nueva
 1. Editar `urls.txt` y agregar la URL
