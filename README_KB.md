@@ -2,8 +2,9 @@
 
 ## Cómo funciona
 
-El `knowledge_base.json` se genera **automáticamente** cada vez que se hace push con cambios en:
+El `knowledge_base.json` se genera automáticamente cada vez que se hace push con cambios en:
 - `pdfs/` — catálogos de productos en PDF
+- `data/` — archivos Excel tabulares de productos
 - `urls.txt` — páginas web a indexar
 - `brandbook.json` — datos estáticos del brandbook
 
@@ -19,6 +20,32 @@ El `knowledge_base.json` se genera **automáticamente** cada vez que se hace pus
 1. Editar `brandbook.json` y agregar el producto en la lista `productos`
 2. Hacer push → GitHub Actions regenera el KB
 
+## Opción C — Agregar productos desde Excel
+
+1. Subir el archivo Excel a la carpeta `data/`
+2. Usar un nombre estable, por ejemplo:
+
+   `data/Drs Choice Tabular Completa.xlsx`
+
+3. El Excel debe tener una fila de headers con columnas como:
+   - Nombre
+   - Marca
+   - Descripición
+   - Precio Rreferencia Base NETO
+   - Aplicaciones Terapias
+   - Especificaciones Técnicas Generales
+   - Vertical
+   - Perfil Comprador Ideal
+   - Tier
+   - URL WEB
+
+4. Hacer push → GitHub Actions regenera `knowledge_base.json`.
+
+Notas:
+- Los precios del Excel se consideran referenciales netos.
+- Los SKU numéricos del Excel se guardan como referencia interna, no como SKU oficial.
+- No editar `knowledge_base.json` directamente.
+
 ## Agregar una URL nueva
 1. Editar `urls.txt` y agregar la URL en una línea nueva
 2. Hacer push → GitHub Actions regenera el KB
@@ -27,6 +54,7 @@ El `knowledge_base.json` se genera **automáticamente** cada vez que se hace pus
 
 ```
 pdfs/                          ← PDFs del cliente (fuente de verdad)
+data/                          ← Excel del cliente (fuente de verdad)
 urls.txt                       ← URLs a scrapear (una por línea)
 brandbook.json       ← datos estáticos: empresa, brandbook, servicios
 knowledge_base.json            ← generado automáticamente ⚠️ no editar
