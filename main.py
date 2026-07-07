@@ -179,6 +179,15 @@ def cargar_o_construir():
 
 EMBEDDINGS, METADATOS = cargar_o_construir()
 
+def formatear_precio_clp(valor) -> str:
+    if not valor:
+        return ""
+
+    try:
+        return f"${int(valor):,}".replace(",", ".") + " CLP neto referencial"
+    except Exception:
+        return f"{valor} CLP neto referencial"
+
 def buscar(consulta: str) -> str:
     result = voyage.embed([consulta], model=EMBED_MODEL, input_type="query")
     vec    = np.array(result.embeddings[0])
@@ -189,13 +198,48 @@ def buscar(consulta: str) -> str:
         r = METADATOS[i]
         if r["tipo"] == "producto":
             marca = r.get("marca") or ""
-            ind   = ", ".join(r.get("indicaciones", []))
-            lineas.append(
+            ind = ", ".join(r.get("indicaciones", []))
+            precio = formatear_precio_clp(r.get("precio_referencia_neto"))
+
+            detalles = []
+
+            if r.get("sku"):
+                detalles.append(f"SKU: {r.get('sku')}")
+
+            if r.get("sku_referencial_excel") and not r.get("sku"):
+                detalles.append(f"Ref. interna: {r.get('sku_referencial_excel')}")
+
+            if r.get("stock"):
+                detalles.append(f"Stock: {r.get('stock')}")
+
+            if precio:
+                detalles.append(f"Precio ref.: {precio}")
+
+            if r.get("tier"):
+                detalles.append(f"Tier: {r.get('tier')}")
+
+            if r.get("perfil_comprador_ideal"):
+                detalles.append(f"Perfil ideal: {r.get('perfil_comprador_ideal')}")
+
+            if r.get("url_web"):
+                detalles.append(f"URL: {r.get('url_web')}")
+
+            bloque = (
                 f"• {r['nombre']}{' (' + marca + ')' if marca else ''}"
-                f" | SKU: {r.get('sku','')} | Stock: {r.get('stock','')}\n"
+                f"{' | ' + ' | '.join(detalles) if detalles else ''}\n"
                 f"  {r.get('descripcion','')}"
-                f"{' | Para: ' + ind if ind else ''}"
             )
+
+            if r.get("aplicaciones_terapias"):
+                bloque += f"\n  Aplicaciones: {r.get('aplicaciones_terapias')}"
+
+            if r.get("especificaciones_tecnicas"):
+                bloque += f"\n  Specs: {r.get('especificaciones_tecnicas')}"
+
+            if ind:
+                bloque += f"\n  Para: {ind}"
+
+            lineas.append(bloque)
         elif r["tipo"] == "servicio":
             lineas.append(f"• Servicio: {r['nombre']} | {r.get('descripcion','')}")
         elif r["tipo"] == "web":
@@ -451,6 +495,7 @@ REGLAS UNIVERSALES:
 - Máximo 2-3 líneas por respuesta. Una idea, luego una pregunta.
 - Responde en el idioma del usuario.
 - Nunca inventes precios, SKUs ni especificaciones fuera del catálogo entregado.
+- Si aparece un precio del Excel, trátalo como precio referencial neto; no lo presentes como precio final ni como cotización formal.
 - No hagas diagnósticos médicos ni prometas resultados clínicos.
 - Si la consulta está fuera del rubro, dilo en una línea y redirige.
 - Formato: texto plano. *asteriscos* solo para nombres de productos.
