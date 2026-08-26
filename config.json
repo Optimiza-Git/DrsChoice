@@ -1,13 +1,13 @@
 {
   "_descripcion": "Parámetros de configuración del sistema Dr's Choice. Editar aquí sin tocar el código.",
-  "_ultima_revision": "2026-05-25",
+  "_ultima_revision": "2026-08-26",
   "modelo": {
     "llm": "claude-sonnet-4-6",
     "embeddings": "voyage-4-lite",
     "nota": "Cambiar solo si Anthropic lanza una versión nueva recomendada"
   },
   "rag": {
-    "top_k": 6,
+    "top_k": 10,
     "max_chars_por_chunk_web": 3000,
     "nota": "top_k: cuántos productos recupera Hermes por consulta. Subir si José parece ignorar productos relevantes. Bajar si el contexto es demasiado largo."
   },
@@ -32,5 +32,16 @@
     "cipher_umbral_regex": 80,
     "cipher_umbral_llm": 80,
     "nota": "cipher_umbral_regex: score asignado si regex detecta patrón. cipher_umbral_llm: score mínimo para bloquear cuando Cipher LLM evalúa."
+  },
+  "comercial": {
+    "politica_path": "commercial_policy.json",
+    "routing_rules_path": "routing_rules.json",
+    "entregar_precios": false,
+    "entregar_stock": false,
+    "email_derivacion_ventas": "tzordan@doctorchoice.cl",
+    "derivar_tienda_online_solo_b2c": true,
+    "url_soporte": "https://drchoice.cl/soporte/",
+    "procesar_imagenes": false,
+    "nota": "José clasifica, orienta y deriva. No entrega precios ni confirma stock; usa rangos internos solo para calificación comercial."
   }
 }

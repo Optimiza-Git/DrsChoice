@@ -7,23 +7,42 @@ def load_kb() -> dict:
         return json.load(f)
 
 
+def clasificar_rango_valor_interno(precio) -> str:
+    """
+    Clasifica el orden de magnitud del producto sin exponer montos.
+    Este dato es solo para recuperación y calificación comercial interna.
+    """
+    if precio in (None, ""):
+        return ""
+    try:
+        valor = int(float(str(precio).replace(".", "").replace(",", ".")))
+    except Exception:
+        return "rango interno no determinado"
+
+    if valor < 100_000:
+        return "bajo"
+    if valor < 500_000:
+        return "medio"
+    if valor < 2_000_000:
+        return "alto"
+    return "muy alto"
+
+
 def construir_texto_chunk(item: dict) -> str:
     """
     Convierte un producto del KB en texto plano para vectorizar.
     Incluye campos del catálogo base + campos tabulares del Excel.
+
+    Importante: precios y stock no deben ser comunicados al usuario. Por eso el
+    texto vectorizado no guarda montos visibles; solo un rango interno útil para
+    calificar el lead y recuperar productos por orden de magnitud.
     """
-    precio = item.get("precio_referencia_neto")
-    precio_txt = ""
-    if precio:
-        try:
-            precio_txt = f"${int(precio):,} CLP neto referencial".replace(",", ".")
-        except Exception:
-            precio_txt = f"{precio} CLP neto referencial"
+    rango_valor = clasificar_rango_valor_interno(item.get("precio_referencia_neto"))
 
     partes = [
         f"Producto: {item.get('nombre', '')}",
-        f"SKU: {item.get('sku', '')}",
-        f"SKU referencial Excel: {item.get('sku_referencial_excel', '')}",
+        f"SKU interno: {item.get('sku', '')}",
+        f"SKU referencial Excel interno: {item.get('sku_referencial_excel', '')}",
         f"Marca: {item.get('marca') or 'Sin marca'}",
         f"Proveedor: {item.get('proveedor', '')}",
         f"País de origen: {item.get('pais_origen', '')}",
@@ -36,11 +55,11 @@ def construir_texto_chunk(item: dict) -> str:
         f"Aplicaciones terapéuticas: {item.get('aplicaciones_terapias', '')}",
         f"Indicaciones: {', '.join(item.get('indicaciones', []))}",
         f"Especificaciones técnicas: {item.get('especificaciones_tecnicas', '')}",
-        f"Precio referencia neto: {precio_txt}",
+        f"Rango interno de valor no comunicable: {rango_valor}",
         f"Canal tienda online: {item.get('canal_tienda_online', '')}",
         f"URL web: {item.get('url_web', '')}",
         f"URL tienda online: {item.get('url_tienda_online', '')}",
-        f"Stock: {item.get('stock', '')}",
+        f"Disponibilidad interna no comunicable: {item.get('stock', '')}",
     ]
 
     return " | ".join(
@@ -123,6 +142,7 @@ FORMATO:
 - *asteriscos simples* solo para resaltar nombres de productos.
 - Listas con • o números. Saltos de línea simples.
 - Nunca inventes precios ni specs fuera del contexto entregado.
+- No entregues precios ni stock al usuario; esos datos son solo internos para calificación comercial.
 
 NOTA: En cada mensaje recibirás un bloque [Contexto recuperado del catálogo] con los productos
 más relevantes para esa consulta específica. Úsalo como tu única fuente de productos.
