@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from twilio.request_validator import RequestValidator
 from twilio.rest import Client
 from knowledge_base import load_kb, build_system_prompt_base, construir_texto_chunk
+from lead_router import cargar_json, resolver_derivacion, construir_bloque_routing
 
 # ── Configuración ─────────────────────────────────────────────
 def load_config() -> dict:
@@ -30,6 +31,7 @@ MODEL       = CFG["modelo"]["llm"]
 EMBED_MODEL = CFG["modelo"]["embeddings"]
 TOP_K       = CFG["rag"]["top_k"]
 MAX_TOKENS  = CFG["tokens"]["max_tokens_railway"]
+COMERCIAL_CFG = CFG.get("comercial", {})
 VENTANA     = CFG["memoria"]["ventana_mensajes"]
 C_REGEX     = CFG["seguridad"]["cipher_umbral_regex"]
 C_LLM       = CFG["seguridad"]["cipher_umbral_llm"]
@@ -64,6 +66,8 @@ KB                = load_kb()
 ARQUETIPOS        = json.load(open(Path(__file__).parent / "arquetipos.json", encoding="utf-8"))
 MARCAS            = json.load(open(Path(__file__).parent / "marcas.json", encoding="utf-8"))
 INSTITUCIONES     = json.load(open(Path(__file__).parent / "instituciones.json", encoding="utf-8"))
+COMMERCIAL_POLICY = cargar_json(Path(__file__).parent / COMERCIAL_CFG.get("politica_path", "commercial_policy.json"), {})
+ROUTING_RULES     = cargar_json(Path(__file__).parent / COMERCIAL_CFG.get("routing_rules_path", "routing_rules.json"), {})
 voyage            = voyageai.Client(api_key=VOYAGE_API_KEY)
 
 # ── SQLite — métricas y leads ─────────────────────────────────
@@ -96,6 +100,20 @@ def init_db():
             FOREIGN KEY (conv_id) REFERENCES conversaciones(id)
         );
     """)
+    # Migraciones livianas: si la tabla ya existía, agregamos columnas nuevas
+    # sin borrar datos históricos.
+    cols = {row[1] for row in con.execute("PRAGMA table_info(conversaciones)").fetchall()}
+    nuevas_columnas = {
+        "tipo_cliente": "TEXT",
+        "intencion": "TEXT",
+        "canal_derivacion": "TEXT",
+        "destino_derivacion": "TEXT",
+        "resumen_necesidad": "TEXT"
+    }
+    for col, tipo in nuevas_columnas.items():
+        if col not in cols:
+            con.execute(f"ALTER TABLE conversaciones ADD COLUMN {col} {tipo}")
+
     con.commit()
     con.close()
     print("✅ SQLite inicializado")
@@ -135,10 +153,24 @@ def registrar_turno(conv_id: int, turno_n: int, msg: str,
     con.close()
 
 def actualizar_lead(conv_id: int, segmento: str, es_lead: bool, datos: dict):
+    datos = datos or {}
     con = sqlite3.connect(DB_PATH)
     con.execute(
-        "UPDATE conversaciones SET segmento=?, es_lead=?, datos_lead=? WHERE id=?",
-        (segmento, int(es_lead), json.dumps(datos, ensure_ascii=False), conv_id)
+        """UPDATE conversaciones
+           SET segmento=?, es_lead=?, datos_lead=?, tipo_cliente=?, intencion=?,
+               canal_derivacion=?, destino_derivacion=?, resumen_necesidad=?
+           WHERE id=?""",
+        (
+            segmento,
+            int(es_lead),
+            json.dumps(datos, ensure_ascii=False),
+            datos.get("tipo_cliente"),
+            datos.get("intencion"),
+            datos.get("canal_recomendado") or datos.get("canal_derivacion"),
+            datos.get("destino_derivacion"),
+            datos.get("resumen_necesidad") or datos.get("razon_lead"),
+            conv_id,
+        )
     )
     con.commit()
     con.close()
@@ -179,6 +211,23 @@ def cargar_o_construir():
 
 EMBEDDINGS, METADATOS = cargar_o_construir()
 
+def clasificar_rango_valor_interno(valor) -> str:
+    """Devuelve rango interno sin exponer montos. No se debe comunicar al usuario."""
+    if not valor:
+        return ""
+    try:
+        v = int(float(str(valor).replace(".", "").replace(",", ".")))
+    except Exception:
+        return "no determinado"
+    if v < 100_000:
+        return "bajo"
+    if v < 500_000:
+        return "medio"
+    if v < 2_000_000:
+        return "alto"
+    return "muy alto"
+
+
 def buscar(consulta: str) -> str:
     result = voyage.embed([consulta], model=EMBED_MODEL, input_type="query")
     vec    = np.array(result.embeddings[0])
@@ -189,13 +238,45 @@ def buscar(consulta: str) -> str:
         r = METADATOS[i]
         if r["tipo"] == "producto":
             marca = r.get("marca") or ""
-            ind   = ", ".join(r.get("indicaciones", []))
-            lineas.append(
+            ind = ", ".join(r.get("indicaciones", []))
+            detalles = []
+
+            # No inyectamos SKU, stock ni montos en el contexto conversacional.
+            # José puede usar tier/perfil/rango interno para calificar, pero no para comunicar precios.
+            if r.get("tier"):
+                detalles.append(f"Tier comercial interno: {r.get('tier')}")
+
+            rango_valor = clasificar_rango_valor_interno(r.get("precio_referencia_neto"))
+            if rango_valor:
+                detalles.append(f"Rango interno de valor no comunicable: {rango_valor}")
+
+            if r.get("perfil_comprador_ideal"):
+                detalles.append(f"Perfil ideal: {r.get('perfil_comprador_ideal')}")
+
+            if r.get("canal_tienda_online"):
+                detalles.append(f"Canal tienda online: {r.get('canal_tienda_online')}")
+
+            if r.get("url_tienda_online"):
+                detalles.append(f"URL tienda online: {r.get('url_tienda_online')}")
+            elif r.get("url_web"):
+                detalles.append(f"URL web: {r.get('url_web')}")
+
+            bloque = (
                 f"• {r['nombre']}{' (' + marca + ')' if marca else ''}"
-                f" | SKU: {r.get('sku','')} | Stock: {r.get('stock','')}\n"
+                f"{' | ' + ' | '.join(detalles) if detalles else ''}\n"
                 f"  {r.get('descripcion','')}"
-                f"{' | Para: ' + ind if ind else ''}"
             )
+
+            if r.get("aplicaciones_terapias"):
+                bloque += f"\n  Aplicaciones: {r.get('aplicaciones_terapias')}"
+
+            if r.get("especificaciones_tecnicas"):
+                bloque += f"\n  Specs: {r.get('especificaciones_tecnicas')}"
+
+            if ind:
+                bloque += f"\n  Para: {ind}"
+
+            lineas.append(bloque)
         elif r["tipo"] == "servicio":
             lineas.append(f"• Servicio: {r['nombre']} | {r.get('descripcion','')}")
         elif r["tipo"] == "web":
@@ -274,27 +355,46 @@ def build_system_clasificador() -> str:
             f"score_tipico={arq['score_tipico']} | "
             f"habla: {arq['como_habla'][:80]}"
         )
-    return f"""Eres un clasificador de perfil profesional para un chatbot de tecnología médica.
+    return f"""Eres un clasificador de perfil e intención comercial para un chatbot de tecnología médica.
 Analiza el mensaje y asigna un score de 0 a 100 según el arquetipo del interlocutor.
+Además clasifica tipo de cliente, intención y canal comercial recomendado.
 
 ARQUETIPOS DISPONIBLES:{arquetipos_str}
 
 SCORE GENERAL:
 0-30:  Público general — paciente, familiar, cuidador, administrativo
-31-60: Profesional salud no-médico
+31-60: Profesional salud no-médico o profesional independiente
 61-85: Médico o profesional clínico senior
 86-100: Médico especialista senior, investigador, director clínico
+
+TIPO_CLIENTE:
+- particular: paciente, familiar, cuidador, compra personal
+- profesional_salud: kinesiólogo, terapeuta, médico, fisiatra u otro profesional
+- institucion: clínica, hospital, centro, universidad, institución
+- licitacion: proceso formal, bases, concurso, mercado público
+- postventa: garantía, falla, reparación, soporte, seguimiento
+- desconocido: no hay datos suficientes
+
+CANAL_RECOMENDADO:
+- tienda_online: solo particular o profesional independiente con compra rápida
+- ventas_b2b: profesional, institución, licitación o cotización
+- postventa: soporte, garantía o reparación
+- nurturing: todavía falta calificar
 
 OVERRIDE INMEDIATO:
 - Declara ser médico/doctor/Dr./dra. → score mínimo 88
 - Menciona especialidad médica → score mínimo 85
 - Menciona institución como lugar de trabajo → score mínimo 75
 - Declara ser paciente/familiar → score máximo 20
+- Menciona garantía/falla/reparación/soporte → tipo_cliente=postventa, canal_recomendado=postventa
 
 Responde SOLO con JSON:
 {{"score": 0-100, "override": true/false,
   "arquetipo": "clave_del_arquetipo_o_null",
   "segmento": "general|profesional|medico|especialista",
+  "tipo_cliente": "particular|profesional_salud|institucion|licitacion|postventa|desconocido",
+  "intencion": "consulta_producto|compra_producto|compra_rapida|cotizacion|licitacion|postventa|educacion|otro",
+  "canal_recomendado": "tienda_online|ventas_b2b|postventa|nurturing",
   "datos": {{"nombre": null, "institucion": null, "rol": null, "especialidad": null, "tipo_compra": null}}}}"""
 
 SYSTEM_CLASIFICADOR = build_system_clasificador()
@@ -348,12 +448,15 @@ async def clasificar_perfil(mensaje: str, score_anterior: float,
     return resultado
 
 # ── José — respuesta calibrada por score ─────────────────────
-def get_system_jose(score: float, contexto: str, arquetipo_key: str = None) -> str:
+def get_system_jose(score: float, contexto: str, arquetipo_key: str = None, routing: dict | None = None) -> str:
     """
     Genera el system prompt de José calibrado por score de perfil.
     El tono se ajusta gradualmente — no hay un switch binario.
     """
     empresa = KB["empresa"]
+    routing_bloque = construir_bloque_routing(routing)
+    soporte_url = COMMERCIAL_POLICY.get("postventa", {}).get("url", COMERCIAL_CFG.get("url_soporte", "https://drchoice.cl/soporte/"))
+    email_ventas = COMMERCIAL_POLICY.get("cotizacion_b2b", {}).get("derivar_a", COMERCIAL_CFG.get("email_derivacion_ventas", "tzordan@doctorchoice.cl"))
 
     # Bloques de marcas e instituciones
     marcas_instruccion = MARCAS.get("instruccion_jose", "")
@@ -408,7 +511,7 @@ CALIBRACIÓN DE TONO:
 - Habla de beneficios en la vida diaria, no de especificaciones técnicas.
 - Pregunta qué necesidad tiene o para quién busca el producto.
 - Si la consulta requiere criterio clínico, sugiere hablar con su médico tratante.
-- Para compra directa, deriva a la tienda online o WhatsApp.
+- Si es particular y el producto tiene tienda online, puedes compartir el link. Si es profesional o institución, captura datos y deriva a representante.
 """
 
     return f"""Eres José, la cara y voz de Dr's Choice — empresa chilena de tecnología médica.
@@ -421,28 +524,30 @@ EMPRESA:
 
 {tono}
 
-MISIÓN DE CALIFICACIÓN (siempre activa, de forma natural):
-José tiene como misión obtener progresivamente estos datos del interlocutor.
-NO los pidas todos de golpe — uno por turno, en el momento natural:
-- Nombre y rol/profesión
-- Institución u organización
-- Especialidad o área clínica
-- Tipo de compra (institucional/personal/licitación)
-- Presupuesto o contexto de adquisición
+MISIÓN COMERCIAL (siempre activa):
+José atiende la consulta inicial, clasifica al cliente, orienta sin comprometer condiciones comerciales y deriva al canal correcto.
+NO busca cerrar la venta ni entregar cotización formal.
+
+POLÍTICA COMERCIAL — CRÍTICO:
+- Nunca entregues precios, montos, rangos numéricos ni valores referenciales al usuario.
+- Nunca confirmes stock ni disponibilidad.
+- Puedes usar tier, perfil comprador y rango interno de valor solo para calificar presupuesto/perfil, sin mencionar montos.
+- Si piden precio, cotización o disponibilidad: responde breve y pide datos de contacto para derivar.
+- Particulares/B2C: si el producto tiene URL tienda online, puedes compartir ese link y recordar que puede comprarlo en tienda.
+- Profesionales, instituciones, clínicas, hospitales, centros de rehabilitación y licitaciones: no los mandes a tienda online; captura datos para representante.
+- Ventas B2B: registra campos clave y deriva internamente a {email_ventas} para asignación de representante.
+- Postventa, garantía, reparación o soporte técnico: deriva al formulario web Soporte: {soporte_url}.
+- Imágenes: no las proceses. Pide un link o una descripción breve de lo que quiere mostrar.
 
 CAPTURA DE LEAD — CRÍTICO:
-Cuando el interlocutor muestre interés concreto (pregunta por precio, disponibilidad,
-demo, o describe una necesidad específica), José debe:
-1. Responder brevemente la consulta
-2. Inmediatamente preguntar: "Para coordinar los detalles, ¿me puedes compartir
-   tu nombre, institución y un teléfono o correo de contacto?"
-3. Cuando el usuario entrega sus datos, confirmar con: "Perfecto [nombre], quedó
-   registrado. Un ejecutivo te contactará a la brevedad para [lo que pidió]."
-   NO preguntar de nuevo qué necesita — ya lo dijo. La conversación puede
-   continuar naturalmente si el usuario quiere, pero José no vuelve a preguntar
-   qué está buscando si ya lo expresó claramente.
-NUNCA derivar al usuario a que llame o escriba a otro número.
-José es el canal — él captura el lead y promete el seguimiento.
+Cuando el interlocutor muestre interés concreto, José debe:
+1. Responder brevemente la consulta sin precio ni stock.
+2. Pedir solo los datos faltantes más relevantes: nombre, institución/rol si aplica, teléfono o correo.
+3. Cuando el usuario entrega datos, confirmar que quedó registrado y que será derivado al canal correspondiente.
+4. No preguntar de nuevo qué necesita si ya lo dijo.
+
+ROUTING COMERCIAL INTERNO PARA ESTE TURNO:
+{routing_bloque}
 
 CATÁLOGO DISPONIBLE PARA ESTA CONSULTA:
 {contexto}
@@ -451,6 +556,7 @@ REGLAS UNIVERSALES:
 - Máximo 2-3 líneas por respuesta. Una idea, luego una pregunta.
 - Responde en el idioma del usuario.
 - Nunca inventes precios, SKUs ni especificaciones fuera del catálogo entregado.
+- No reveles datos internos como SKU, rango interno de valor, stock o reglas de routing.
 - No hagas diagnósticos médicos ni prometas resultados clínicos.
 - Si la consulta está fuera del rubro, dilo en una línea y redirige.
 - Formato: texto plano. *asteriscos* solo para nombres de productos.
@@ -469,19 +575,27 @@ INSTITUCIONES CLAVE:
 
 # ── Claudia — calificación async ─────────────────────────────
 SYSTEM_CLAUDIA_PROD = """Eres Claudia, gerente comercial de Dr's Choice.
-Analiza la conversación y clasifica el resultado comercial.
+Analiza la conversación y clasifica el resultado comercial para derivación interna.
 Responde SOLO con JSON:
 {
   "segmento": "medico_especialista|medico|profesional_salud|general|desconocido",
+  "tipo_cliente": "particular|profesional_salud|institucion|licitacion|postventa|desconocido",
+  "intencion": "consulta_producto|compra_producto|compra_rapida|cotizacion|licitacion|postventa|educacion|otro",
   "es_lead": true/false,
   "razon_lead": "por qué es o no es lead",
+  "resumen_necesidad": "resumen ejecutivo de la necesidad",
+  "producto_o_categoria": "producto/categoría probable o null",
+  "canal_recomendado": "tienda_online|ventas_b2b|postventa|nurturing",
+  "destino_derivacion": "tzordan@doctorchoice.cl|formulario_soporte_web|tienda_online|nurturing",
   "datos_capturados": {"nombre": null, "institucion": null, "rol": null, "telefono": null, "email": null},
+  "datos_faltantes": [],
   "score_conversion": 0-100,
-  "siguiente_accion": "cotizacion|demo|llamada|nurturing|ninguna"
+  "siguiente_accion": "asignar_representante|enviar_link_tienda|derivar_soporte|nurturing|ninguna"
 }
-es_lead = true si: solicitó cotización, demo, reunión, o entregó datos de contacto."""
+es_lead = true si: solicitó cotización, compra, demo, reunión, postventa, o entregó datos de contacto.
+Nunca propongas entregar precios ni stock; solo deriva según canal."""
 
-async def claudia_async(conv_id: int, historial: list, score_perfil: float):
+async def claudia_async(conv_id: int, historial: list, score_perfil: float, routing: dict | None = None):
     """Corre en background — no bloquea la respuesta al usuario."""
     resumen = "\n".join(
         f"{m['role']}: {m['content'][:150]}" for m in historial[-10:]
@@ -492,10 +606,10 @@ async def claudia_async(conv_id: int, historial: list, score_perfil: float):
             headers={"x-api-key": ANTHROPIC_API_KEY,
                      "anthropic-version": "2023-06-01",
                      "content-type": "application/json"},
-            json={"model": MODEL, "max_tokens": 200,
+            json={"model": MODEL, "max_tokens": CFG["tokens"].get("claudia_prod", 300),
                   "system": SYSTEM_CLAUDIA_PROD,
                   "messages": [{"role": "user",
-                                "content": f"Score perfil: {score_perfil}\n\n{resumen}"}]}
+                                "content": f"Score perfil: {score_perfil}\nRouting actual: {json.dumps(routing or {}, ensure_ascii=False)}\n\n{resumen}"}]}
         )
         data = resp.json()
 
@@ -505,11 +619,14 @@ async def claudia_async(conv_id: int, historial: list, score_perfil: float):
             inicio = txt.find("{")
             fin    = txt.rfind("}") + 1
             result = json.loads(txt[inicio:fin])
+            datos_lead = result.get("datos_capturados", {}) or {}
+            for k in ["tipo_cliente", "intencion", "canal_recomendado", "destino_derivacion", "resumen_necesidad", "razon_lead", "producto_o_categoria", "datos_faltantes", "siguiente_accion"]:
+                datos_lead[k] = result.get(k)
             actualizar_lead(
                 conv_id,
                 result.get("segmento", "desconocido"),
                 result.get("es_lead", False),
-                result.get("datos_capturados", {})
+                datos_lead
             )
             # Actualizamos score_conversion en DB
             con = sqlite3.connect(DB_PATH)
@@ -535,7 +652,8 @@ def get_session(phone: str) -> dict:
             "historial": [],
             "score_perfil": 50.0,
             "conv_id": get_or_create_conv(phone),
-            "turno_n": 0
+            "turno_n": 0,
+            "routing": {}
         }
     return session_store[phone]
 
@@ -592,9 +710,20 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
         # 3. Hermes
         contexto = buscar(msg)
 
+        # 3B. Router comercial interno
+        routing = resolver_derivacion(
+            msg,
+            clf,
+            session["historial"],
+            contexto,
+            COMMERCIAL_POLICY,
+            ROUTING_RULES,
+        )
+        session["routing"] = routing
+
         # 4. José calibrado
         arquetipo_key = clf.get("arquetipo")
-        system   = get_system_jose(session["score_perfil"], contexto, arquetipo_key)
+        system   = get_system_jose(session["score_perfil"], contexto, arquetipo_key, routing)
         session["historial"].append({"role": "user", "content": msg})
         if len(session["historial"]) > VENTANA:
             session["historial"] = session["historial"][-VENTANA:]
@@ -606,6 +735,7 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
             "role": "user",
             "content": (
                 f"[Contexto del catálogo para esta consulta:]\n{contexto}\n\n"
+                f"[Routing comercial interno:]\n{json.dumps(routing, ensure_ascii=False)}\n\n"
                 f"[Mensaje:]\n{session['historial'][-1]['content']}"
             )
         }]
@@ -631,15 +761,17 @@ async def chat_endpoint(req: ChatRequest, bg: BackgroundTasks):
         registrar_turno(session["conv_id"], session["turno_n"],
                         msg, reply, session["score_perfil"], cipher.get("score", 0))
 
-        # 6. Claudia corre en background (cada 3 turnos para no sobrecargar)
-        if session["turno_n"] % 3 == 0:
+        # 6. Claudia corre en background. Si hay intención comercial/postventa,
+        # corre en ese turno; si no, cada 3 turnos para no sobrecargar.
+        if routing.get("es_lead_potencial") or session["turno_n"] % 3 == 0:
             bg.add_task(claudia_async, session["conv_id"],
-                        session["historial"], session["score_perfil"])
+                        session["historial"], session["score_perfil"], routing)
 
         return {
             "reply": reply,
             "score_perfil": session["score_perfil"],
-            "segmento": clf.get("segmento", "neutro")
+            "segmento": clf.get("segmento", "neutro"),
+            "routing": routing
         }
     except Exception as e:
         print(f"ERROR /chat: {e}")
@@ -674,8 +806,11 @@ async def whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
     From: str = Form(...),
-    Body: str = Form(...),
+    Body: str = Form(""),
     MessageSid: str = Form(...),
+    NumMedia: str = Form("0"),
+    MediaUrl0: str = Form(""),
+    MediaContentType0: str = Form(""),
 ):
     from twilio.twiml.messaging_response import MessagingResponse
 
@@ -693,6 +828,21 @@ async def whatsapp_webhook(
 
     phone    = From.replace("whatsapp:", "")
     user_msg = Body.strip()
+
+    try:
+        num_media = int(NumMedia or "0")
+    except Exception:
+        num_media = 0
+
+    if num_media > 0:
+        aviso_media = COMMERCIAL_POLICY.get("imagenes", {}).get(
+            "respuesta",
+            "Por ahora no puedo revisar imágenes directamente. ¿Me puedes enviar un link o describirme brevemente lo que quieres mostrar?"
+        )
+        if user_msg:
+            user_msg = f"{user_msg}\n\n[El usuario adjuntó una imagen o archivo. Política: {aviso_media}]"
+        else:
+            user_msg = f"El usuario adjuntó una imagen o archivo por WhatsApp. Responde según esta política: {aviso_media}"
 
     if not user_msg:
         return PlainTextResponse(str(MessagingResponse()), media_type="text/xml")

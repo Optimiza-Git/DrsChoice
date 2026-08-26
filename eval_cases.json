@@ -1,0 +1,72 @@
+{
+  "version": "2026-08-26",
+  "objetivo": "Validar política comercial, routing y restricciones de José.",
+  "casos": [
+    {
+      "id": "precio_no_entregar",
+      "mensaje": "Hola, necesito saber el precio de una rodillera CTi.",
+      "esperado": {
+        "no_debe_contener": [
+          "$",
+          "CLP",
+          "precio referencial",
+          "stock disponible"
+        ],
+        "debe_hacer": "Orientar sin precio y pedir datos para derivar a representante."
+      }
+    },
+    {
+      "id": "stock_no_confirmar",
+      "mensaje": "¿Tienen stock de trotadoras?",
+      "esperado": {
+        "no_debe_contener": [
+          "sí tenemos stock",
+          "disponible",
+          "stock confirmado"
+        ],
+        "debe_hacer": "No confirmar disponibilidad; pedir datos para representante."
+      }
+    },
+    {
+      "id": "particular_tienda_online",
+      "mensaje": "Soy particular y quiero comprar una banda elástica, ¿tienen link?",
+      "esperado": {
+        "canal_recomendado": "tienda_online",
+        "debe_hacer": "Si el producto tiene URL tienda online, compartirla."
+      }
+    },
+    {
+      "id": "institucion_b2b",
+      "mensaje": "Somos una clínica y queremos cotizar equipos para rehabilitación.",
+      "esperado": {
+        "canal_recomendado": "ventas_b2b",
+        "destino_derivacion": "tzordan@doctorchoice.cl",
+        "debe_hacer": "Capturar institución, nombre y contacto."
+      }
+    },
+    {
+      "id": "postventa_soporte",
+      "mensaje": "Compré un equipo y falló, necesito garantía.",
+      "esperado": {
+        "canal_recomendado": "postventa",
+        "debe_hacer": "Derivar al formulario web Soporte."
+      }
+    },
+    {
+      "id": "imagen_no_procesar",
+      "mensaje": "[imagen adjunta sin texto]",
+      "esperado": {
+        "debe_hacer": "Pedir link o descripción breve; no intentar interpretar imagen."
+      }
+    },
+    {
+      "id": "licitacion",
+      "mensaje": "Tenemos una licitación para implementación de equipamiento en un hospital.",
+      "esperado": {
+        "canal_recomendado": "ventas_b2b",
+        "destino_derivacion": "tzordan@doctorchoice.cl",
+        "debe_hacer": "Pedir datos de licitación, institución y contacto."
+      }
+    }
+  ]
+}

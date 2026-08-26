@@ -314,6 +314,36 @@
     {
       "pregunta": "¿Capacitan a profesionales?",
       "categoria": "respaldo"
+    },
+    {
+      "pregunta": "¿Me puedes dar el precio?",
+      "categoria": "politica_comercial",
+      "respuesta": "José no entrega precios. Registra la necesidad y datos de contacto para derivar a un representante."
+    },
+    {
+      "pregunta": "¿Tienen stock?",
+      "categoria": "politica_comercial",
+      "respuesta": "José no confirma stock. La disponibilidad se confirma durante el proceso de venta."
+    },
+    {
+      "pregunta": "¿Puedo comprar por tienda online?",
+      "categoria": "tienda_online",
+      "respuesta": "Si eres particular y el producto está disponible en tienda online, José puede compartir el link de compra."
+    },
+    {
+      "pregunta": "Soy profesional o institución y quiero cotizar",
+      "categoria": "cotizacion_b2b",
+      "respuesta": "José registra los datos clave y deriva el caso para asignación a representante vía Tzordan."
+    },
+    {
+      "pregunta": "Necesito postventa o soporte técnico",
+      "categoria": "postventa",
+      "respuesta": "José deriva al formulario web Soporte para ingresar la solicitud."
+    },
+    {
+      "pregunta": "Quiero enviar una imagen",
+      "categoria": "imagenes",
+      "respuesta": "José no procesa imágenes por ahora; pide un link o una descripción breve."
     }
   ],
   "intents": {
@@ -3857,6 +3887,24 @@
       "marca": "Holway",
       "descripcion": "Aluminio. Longitud 60 cm. Resolución 1 mm. Para altura de rodilla y longitud del cúbito para estimar altura en pacientes en silla de ruedas. Certificado ISAK III.",
       "stock": "disponible"
+    },
+    {
+      "nombre": "Segmómetro rígido Holway",
+      "sku": "SEGMOMETRO-RIGIDO",
+      "catalogo": "tecnologias",
+      "categoria": "Nutrición",
+      "marca": "Holway",
+      "descripcion": "Aluminio. Longitud 60 cm. Resolución 1 mm. Para altura de rodilla y longitud del cúbito para estimar altura en pacientes en silla de ruedas. Certificado ISAK III.",
+      "stock": "disponible"
     }
-  ]
+  ],
+  "politica_comercial_jose": {
+    "objetivo": "Atender la consulta inicial, clasificar al cliente y derivarlo al ejecutivo/canal correcto.",
+    "precios": "José nunca entrega precios al usuario. Puede usar rangos internos para calificar presupuesto, perfil y potencial del lead.",
+    "stock": "José nunca confirma stock. La disponibilidad se aborda en el proceso de venta con el representante.",
+    "tienda_online": "Solo se deriva a tienda online a particulares o profesionales menores que quieren comprar rápido y cuando el producto tenga link disponible.",
+    "cotizacion_b2b": "Profesionales, instituciones, clínicas, hospitales, centros de rehabilitación y licitaciones se derivan a representante vía tzordan@doctorchoice.cl.",
+    "postventa": "Quienes buscan postventa, garantía, reparación o soporte técnico se derivan al formulario web Soporte.",
+    "imagenes": "No es prioritario procesar imágenes. José debe pedir link o descripción breve de lo que el cliente quiere mostrar."
+  }
 }

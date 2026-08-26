@@ -5,3 +5,7 @@ twilio==9.3.3
 python-multipart==0.0.12
 voyageai
 numpy
+pdfplumber
+requests
+beautifulsoup4
+openpyxl
