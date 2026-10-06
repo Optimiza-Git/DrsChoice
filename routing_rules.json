@@ -1,12 +1,21 @@
 {
-  "version": "2026-08-26",
+  "version": "2026-09-30",
   "destinos": {
     "ventas_b2b": "tzordan@doctorchoice.cl",
     "tienda_online": "url_tienda_online_del_producto",
-    "postventa": "https://drchoice.cl/soporte/",
-    "nurturing": "registrar_interes_y_continuar_calificacion"
+    "postventa": "https://doctorchoice-596346556452951866.myfreshworks.com/crm/sales/web_forms/ab2299929bb044f6909ee3ad6118afb1c431f490146c81184439e63f4a5db487/form.html",
+    "nurturing": "registrar_interes_y_continuar_calificacion",
+    "informacion_reembolso": "respuesta_aprobada_commercial_policy"
   },
   "routing": [
+    {
+      "id": "reembolso_cobertura",
+      "tipo_cliente": "cualquiera",
+      "intencion": "reembolso_cobertura",
+      "condicion": "isapre_seguro_complementario_codigo_reembolso_bonificacion_cobertura",
+      "canal_recomendado": "informacion_reembolso",
+      "accion": "responder_texto_reembolso_aprobado_sin_derivar_postventa"
+    },
     {
       "id": "particular_tienda_online",
       "tipo_cliente": "particular",
@@ -59,9 +68,10 @@
       "id": "postventa_soporte",
       "tipo_cliente": "postventa",
       "intencion": "postventa",
-      "condicion": "garantia_falla_reparacion_seguimiento_servicio_tecnico",
+      "condicion": "garantia_falla_reparacion_seguimiento_servicio_tecnico_devolucion_producto",
       "canal_recomendado": "postventa",
-      "accion": "derivar_formulario_soporte"
+      "accion": "derivar_formulario_soporte",
+      "nota": "No incluye consultas de reembolso Isapre/seguro."
     },
     {
       "id": "desconocido_calificar",

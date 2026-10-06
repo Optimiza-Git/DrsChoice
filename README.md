@@ -64,3 +64,19 @@ Archivos de reglas:
 - `routing_rules.json`: matriz de intención/tipo de cliente/canal recomendado.
 - `lead_router.py`: funciones de clasificación y routing comercial.
 - `eval_cases.json`: casos de prueba para validar que José no entregue precios/stock y derive correctamente.
+
+
+## Ajustes comerciales — ronda de feedback 2 (2026-09-30)
+
+- Reembolso Isapre/seguro complementario se trata como información administrativa y **no** como postventa. La respuesta aprobada está centralizada en `commercial_policy.json`.
+- Postventa deriva exclusivamente al formulario oficial **Soporte** de Freshworks. No usar recepción como fallback ni prometer plazos de respuesta.
+- José valida teléfono/correo antes de confirmar registro de un lead. El número de origen de WhatsApp se considera contacto válido, pero un dato explícitamente inválido debe corregirse.
+- Datos corporativos oficiales (dirección, web, tienda, Instagram y LinkedIn) están en `brandbook.json`; José no debe inventar horarios ni canales ausentes.
+- Tras calificar la necesidad, José puede presentar hasta **3 alternativas** relevantes cuando existan o cuando el usuario pida opciones.
+- Para B2C/compra rápida, Hermes aplica un boost moderado a productos con `url_tienda_online` para favorecer links directos de compra.
+- `config.json > rag.query_expansion` contiene aliases/casos de uso controlados para mejorar recuperación semántica sin editar descripciones de producto.
+- El procesamiento de imágenes sigue deshabilitado; José pide link o descripción.
+
+### Soporte oficial
+
+La URL configurada corresponde al enlace **Soporte** publicado en `drchoice.cl` y apunta al formulario Freshworks.

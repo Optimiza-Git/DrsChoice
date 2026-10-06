@@ -1,6 +1,6 @@
 {
   "_descripcion": "Parámetros de configuración del sistema Dr's Choice. Editar aquí sin tocar el código.",
-  "_ultima_revision": "2026-08-26",
+  "_ultima_revision": "2026-09-30",
   "modelo": {
     "llm": "claude-sonnet-4-6",
     "embeddings": "voyage-4-lite",
@@ -9,7 +9,56 @@
   "rag": {
     "top_k": 10,
     "max_chars_por_chunk_web": 3000,
-    "nota": "top_k: cuántos productos recupera Hermes por consulta. Subir si José parece ignorar productos relevantes. Bajar si el contexto es demasiado largo."
+    "nota": "top_k: cuántos productos recupera Hermes por consulta. Subir si José parece ignorar productos relevantes. Bajar si el contexto es demasiado largo.",
+    "query_expansion": {
+      "laboratorio de fisiologia": [
+        "ergoespirometría",
+        "CPET",
+        "VO2",
+        "Cortex",
+        "ergómetro",
+        "Ergoselect",
+        "Noraxon"
+      ],
+      "evaluacion deportiva": [
+        "rendimiento humano",
+        "ergoespirometría",
+        "VO2",
+        "Cortex",
+        "Noraxon",
+        "ergómetro"
+      ],
+      "rehabilitacion de mano": [
+        "Saebo",
+        "Neofect",
+        "Smart Glove",
+        "férula de mano",
+        "neurorehabilitación",
+        "ACV"
+      ],
+      "mano post acv": [
+        "Saebo",
+        "Neofect",
+        "Smart Glove",
+        "neurorehabilitación",
+        "terapia ocupacional"
+      ],
+      "traslado de paciente": [
+        "Handimove",
+        "grúa de transferencia",
+        "arnés",
+        "transferencia de pacientes",
+        "movilidad"
+      ],
+      "adulto mayor movilidad": [
+        "Handimove",
+        "MOTOmed",
+        "pedalera",
+        "transferencia",
+        "envejecimiento activo"
+      ]
+    },
+    "nota_query_expansion": "Aliases comerciales para enriquecer la consulta de embeddings sin alterar descripciones de productos."
   },
   "tokens": {
     "jose": 150,
@@ -20,8 +69,8 @@
     "cliente_sintetico": 100,
     "max_tokens_railway": 300,
     "nota": "jose y max_tokens_railway deben ser consistentes. clasificador y claudia_prod son llamadas adicionales por turno.",
-    "clasificador": 120,
-    "claudia_prod": 200
+    "clasificador": 180,
+    "claudia_prod": 250
   },
   "memoria": {
     "ventana_mensajes": 20,
@@ -40,8 +89,10 @@
     "entregar_stock": false,
     "email_derivacion_ventas": "tzordan@doctorchoice.cl",
     "derivar_tienda_online_solo_b2c": true,
-    "url_soporte": "https://drchoice.cl/soporte/",
+    "url_soporte": "https://doctorchoice-596346556452951866.myfreshworks.com/crm/sales/web_forms/ab2299929bb044f6909ee3ad6118afb1c431f490146c81184439e63f4a5db487/form.html",
     "procesar_imagenes": false,
-    "nota": "José clasifica, orienta y deriva. No entrega precios ni confirma stock; usa rangos internos solo para calificación comercial."
+    "nota": "José clasifica, orienta y deriva. No entrega precios ni confirma stock; usa rangos internos solo para calificación comercial. Valida datos de contacto y distingue reembolso/Isapre de postventa.",
+    "validar_contacto": true,
+    "max_alternativas_despues_calificacion": 3
   }
 }

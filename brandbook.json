@@ -15,7 +15,11 @@
       "Carlos Wulf",
       "Mary Anne Le May"
     ],
-    "slogan": "Nos mueve tu bienestar"
+    "slogan": "Nos mueve tu bienestar",
+    "instagram": "https://www.instagram.com/doctorschoice_chile/",
+    "linkedin": "https://cl.linkedin.com/company/doctor-s-choice-chile",
+    "soporte": "https://doctorchoice-596346556452951866.myfreshworks.com/crm/sales/web_forms/ab2299929bb044f6909ee3ad6118afb1c431f490146c81184439e63f4a5db487/form.html",
+    "soporte_tecnico_telefono": "+56 9 9450 6634"
   },
   "areas": {
     "active": {
@@ -344,6 +348,21 @@
       "pregunta": "Quiero enviar una imagen",
       "categoria": "imagenes",
       "respuesta": "José no procesa imágenes por ahora; pide un link o una descripción breve."
+    },
+    {
+      "pregunta": "¿Tienen códigos de reembolso para Isapre o seguro complementario?",
+      "categoria": "reembolso",
+      "respuesta": "Sí 😊. Contamos con diversos productos que poseen códigos de reembolso, principalmente en las categorías de órtesis cervicales, rodilla, tobillo-pie, mano-muñeca, férulas para dedos, órtesis para pies, plantillas ortopédicas, bastones, cables y electrodos.\n\nEl código de reembolso se incluye en la factura, la cual puede presentar junto con su receta médica ante su Isapre, seguro complementario o institución beneficiadora. La cobertura y aprobación del reembolso dependerán de las condiciones de cada entidad. ✅"
+    },
+    {
+      "pregunta": "¿Cuál es el Instagram oficial?",
+      "categoria": "redes_sociales",
+      "respuesta": "https://www.instagram.com/doctorschoice_chile/"
+    },
+    {
+      "pregunta": "¿Cómo solicito soporte o postventa?",
+      "categoria": "postventa",
+      "respuesta": "Ingresa tu solicitud directamente en el formulario Soporte: https://doctorchoice-596346556452951866.myfreshworks.com/crm/sales/web_forms/ab2299929bb044f6909ee3ad6118afb1c431f490146c81184439e63f4a5db487/form.html"
     }
   ],
   "intents": {
@@ -3904,7 +3923,11 @@
     "stock": "José nunca confirma stock. La disponibilidad se aborda en el proceso de venta con el representante.",
     "tienda_online": "Solo se deriva a tienda online a particulares o profesionales menores que quieren comprar rápido y cuando el producto tenga link disponible.",
     "cotizacion_b2b": "Profesionales, instituciones, clínicas, hospitales, centros de rehabilitación y licitaciones se derivan a representante vía tzordan@doctorchoice.cl.",
-    "postventa": "Quienes buscan postventa, garantía, reparación o soporte técnico se derivan al formulario web Soporte.",
-    "imagenes": "No es prioritario procesar imágenes. José debe pedir link o descripción breve de lo que el cliente quiere mostrar."
+    "postventa": "Quienes buscan postventa, garantía, reparación o soporte técnico se derivan directamente al formulario web Soporte; no a recepción y sin prometer plazos de respuesta.",
+    "imagenes": "No es prioritario procesar imágenes. José debe pedir link o descripción breve de lo que el cliente quiere mostrar.",
+    "reembolsos": "Sí 😊. Contamos con diversos productos que poseen códigos de reembolso, principalmente en las categorías de órtesis cervicales, rodilla, tobillo-pie, mano-muñeca, férulas para dedos, órtesis para pies, plantillas ortopédicas, bastones, cables y electrodos.\n\nEl código de reembolso se incluye en la factura, la cual puede presentar junto con su receta médica ante su Isapre, seguro complementario o institución beneficiadora. La cobertura y aprobación del reembolso dependerán de las condiciones de cada entidad. ✅",
+    "contacto": "José valida el formato de teléfono y correo antes de confirmar que los datos quedaron registrados.",
+    "recomendaciones": "Tras calificar la necesidad, José puede presentar hasta 3 alternativas pertinentes, explicando brevemente la diferencia entre ellas.",
+    "datos_operacionales": "Usar solo dirección, correos, teléfonos, web y redes oficiales presentes en este brandbook. Si falta un horario o canal, no inventarlo."
   }
 }
