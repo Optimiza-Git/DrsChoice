@@ -17,9 +17,11 @@ import json
 import os
 import re
 import requests
+import unicodedata
 from pathlib import Path
 from datetime import datetime
 from bs4 import BeautifulSoup
+from openpyxl import load_workbook
 
 try:
     import pdfplumber
@@ -32,6 +34,7 @@ PDFS_DIR    = Path("pdfs")
 URLS_FILE   = Path("urls.txt")
 OUTPUT_FILE = Path("knowledge_base.json")
 KB_BASE     = Path("brandbook.json")  # datos estáticos de empresa/brandbook
+DATA_DIR    = Path("data")
 
 # ── 1. Cargar datos base (empresa, brandbook, servicios) ──────
 
@@ -202,8 +205,270 @@ def extraer_productos_de_texto(texto: str, catalogo: str) -> list[dict]:
     
     return productos
 
+# ── 3. Extracción de Excel tabular ─────────────────────────────
 
-# ── 3. Web Scraping ───────────────────────────────────────────
+def normalizar_clave(texto: str) -> str:
+    """
+    Normaliza headers y nombres para comparar sin acentos, mayúsculas ni símbolos.
+    """
+    texto = str(texto or "").strip().lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(c for c in texto if not unicodedata.combining(c))
+    texto = re.sub(r"[^a-z0-9]+", "_", texto)
+    return texto.strip("_")
+
+
+def limpiar_celda(valor) -> str:
+    if valor is None:
+        return ""
+    if isinstance(valor, float) and valor.is_integer():
+        return str(int(valor)).strip()
+    return str(valor).strip()
+
+
+def limpiar_precio(valor):
+    """
+    Convierte precios del Excel a entero CLP cuando sea posible.
+    """
+    if valor is None or valor == "":
+        return None
+
+    if isinstance(valor, (int, float)):
+        return int(valor)
+
+    texto = str(valor).strip()
+    texto = re.sub(r"[^\d,\.]", "", texto)
+
+    if not texto:
+        return None
+
+    # Formato chileno frecuente: 1.299.990
+    if "," not in texto:
+        texto = texto.replace(".", "")
+    else:
+        texto = texto.replace(".", "").replace(",", ".")
+
+    try:
+        return int(float(texto))
+    except ValueError:
+        return None
+
+
+def split_indicaciones(texto: str) -> list[str]:
+    """
+    Convierte aplicaciones terapéuticas en lista breve para el RAG.
+    """
+    texto = limpiar_celda(texto)
+    if not texto:
+        return []
+
+    partes = re.split(r"[;,]", texto)
+    return [p.strip() for p in partes if p.strip()]
+
+
+def detectar_fila_header_excel(ws) -> tuple[int, list[str]]:
+    """
+    El Excel tiene una nota en fila 1 y los headers reales en fila 2.
+    Esta función detecta la fila que contiene Nombre y Marca.
+    """
+    alias = {
+        "sku": "sku",
+        "precio_rreferencia_base_neto": "precio_referencia_neto",
+        "precio_referencia_base_neto": "precio_referencia_neto",
+        "nombre": "nombre",
+        "marca": "marca",
+        "descripicion": "descripcion",
+        "descripcion": "descripcion",
+        "escalable": "escalable",
+        "aplicaciones_terapias": "aplicaciones_terapias",
+        "especificaciones_tecnicas_generales": "especificaciones_tecnicas",
+        "vertical": "vertical",
+        "pais_de_origen": "pais_origen",
+        "proveedor": "proveedor",
+        "perfil_comprador_ideal": "perfil_comprador_ideal",
+        "tier": "tier",
+        "url_web": "url_web",
+        "se_puede_comprar_en_tienda_online": "canal_tienda_online",
+        "url_tol": "url_tol",
+    }
+
+    for idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
+        headers_raw = [normalizar_clave(c) for c in row]
+        if "nombre" in headers_raw and "marca" in headers_raw:
+            headers = [alias.get(h, h) for h in headers_raw]
+            return idx, headers
+
+    raise ValueError("No se encontró fila de headers en el Excel")
+
+
+def sku_oficial_o_vacio(sku_ref: str) -> str:
+    """
+    En este Excel los SKU son referenciales.
+    Si son solo números, no los usamos como SKU oficial.
+    """
+    sku_ref = limpiar_celda(sku_ref)
+    if not sku_ref:
+        return ""
+
+    # Los SKU numéricos del Excel parecen IDs referenciales, no SKU reales.
+    if sku_ref.isdigit():
+        return ""
+
+    return sku_ref
+
+
+def producto_desde_excel(row: dict, fila_excel: int, archivo: str) -> dict | None:
+    nombre = limpiar_celda(row.get("nombre"))
+    if not nombre:
+        return None
+
+    sku_ref = limpiar_celda(row.get("sku"))
+    sku = sku_oficial_o_vacio(sku_ref)
+
+    descripcion = limpiar_celda(row.get("descripcion"))
+    aplicaciones = limpiar_celda(row.get("aplicaciones_terapias"))
+    especificaciones = limpiar_celda(row.get("especificaciones_tecnicas"))
+
+    url_tol = limpiar_celda(row.get("url_tol"))
+    if url_tol.lower().startswith("http"):
+        url_tienda_online = url_tol
+        titulo_tienda_online = ""
+    else:
+        url_tienda_online = ""
+        titulo_tienda_online = url_tol
+
+    producto = {
+        "nombre": nombre,
+        "sku": sku,
+        "sku_referencial_excel": sku_ref,
+        "catalogo": "tabular_completa",
+        "categoria": limpiar_celda(row.get("vertical")),
+        "vertical": limpiar_celda(row.get("vertical")),
+        "marca": limpiar_celda(row.get("marca")) or None,
+        "descripcion": descripcion,
+        "indicaciones": split_indicaciones(aplicaciones),
+        "aplicaciones_terapias": aplicaciones,
+        "especificaciones_tecnicas": especificaciones,
+        "precio_referencia_neto": limpiar_precio(row.get("precio_referencia_neto")),
+        "moneda": "CLP",
+        "escalable": limpiar_celda(row.get("escalable")),
+        "pais_origen": limpiar_celda(row.get("pais_origen")),
+        "proveedor": limpiar_celda(row.get("proveedor")),
+        "perfil_comprador_ideal": limpiar_celda(row.get("perfil_comprador_ideal")),
+        "tier": limpiar_celda(row.get("tier")),
+        "url_web": limpiar_celda(row.get("url_web")),
+        "canal_tienda_online": limpiar_celda(row.get("canal_tienda_online")),
+        "url_tienda_online": url_tienda_online,
+        "titulo_tienda_online": titulo_tienda_online,
+        "stock": "consultar",
+        "_fuente": "excel",
+        "_archivo": archivo,
+        "_fila_excel": fila_excel,
+    }
+
+    return producto
+
+
+def procesar_excel_productos(xlsx_path: Path) -> list[dict]:
+    """
+    Lee el Excel tabular de Dr's Choice y lo transforma en productos estructurados.
+    """
+    print(f"  📊 Procesando Excel {xlsx_path.name}...")
+
+    wb = load_workbook(xlsx_path, read_only=True, data_only=True)
+    ws = wb.active
+
+    header_row, headers = detectar_fila_header_excel(ws)
+
+    productos = []
+
+    for fila_excel, values in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True),
+        start=header_row + 1
+    ):
+        row = {}
+        for i, header in enumerate(headers):
+            if not header:
+                continue
+            row[header] = values[i] if i < len(values) else ""
+
+        producto = producto_desde_excel(row, fila_excel, xlsx_path.name)
+        if producto:
+            productos.append(producto)
+
+    print(f"    ✅ {len(productos)} productos desde Excel")
+    return productos
+
+
+def merge_productos_excel(productos_base: list[dict], productos_excel: list[dict]) -> tuple[list[dict], int, int]:
+    """
+    Fusiona productos del Excel con los productos existentes.
+    - Si el nombre ya existe, enriquece el producto existente con precio, URL, tier, specs, etc.
+    - Si no existe, lo agrega como producto nuevo.
+    """
+    productos = list(productos_base)
+
+    por_nombre = {
+        normalizar_clave(p.get("nombre", "")): p
+        for p in productos
+        if p.get("nombre")
+    }
+
+    campos_extra_excel = [
+        "sku_referencial_excel",
+        "precio_referencia_neto",
+        "moneda",
+        "vertical",
+        "aplicaciones_terapias",
+        "especificaciones_tecnicas",
+        "escalable",
+        "pais_origen",
+        "proveedor",
+        "perfil_comprador_ideal",
+        "tier",
+        "url_web",
+        "canal_tienda_online",
+        "url_tienda_online",
+        "titulo_tienda_online",
+        "_fuente",
+        "_archivo",
+        "_fila_excel",
+    ]
+
+    actualizados = 0
+    agregados = 0
+
+    for prod_excel in productos_excel:
+        key = normalizar_clave(prod_excel.get("nombre", ""))
+
+        if key in por_nombre:
+            prod_base = por_nombre[key]
+
+            # No pisamos datos curados importantes salvo que estén vacíos.
+            for campo in ["marca", "descripcion", "categoria", "catalogo", "stock"]:
+                if not prod_base.get(campo) and prod_excel.get(campo):
+                    prod_base[campo] = prod_excel[campo]
+
+            # Sí agregamos/enriquecemos campos tabulares.
+            for campo in campos_extra_excel:
+                valor = prod_excel.get(campo)
+                if valor not in (None, "", []):
+                    prod_base[campo] = valor
+
+            # Sumamos indicaciones sin duplicar.
+            indicaciones_base = prod_base.get("indicaciones", []) or []
+            indicaciones_excel = prod_excel.get("indicaciones", []) or []
+            prod_base["indicaciones"] = list(dict.fromkeys(indicaciones_base + indicaciones_excel))
+
+            actualizados += 1
+        else:
+            productos.append(prod_excel)
+            por_nombre[key] = prod_excel
+            agregados += 1
+
+    return productos, actualizados, agregados
+
+# ── 4. Web Scraping ───────────────────────────────────────────
 
 def cargar_urls() -> list[str]:
     """Lee las URLs desde urls.txt — una por línea, # para comentarios."""
@@ -248,7 +513,7 @@ def scrape_url(url: str, timeout: int = 10) -> dict:
         return {"url": url, "texto": "", "ok": False}
 
 
-# ── 4. Ensamblado del KB ──────────────────────────────────────
+# ── 5. Ensamblado del KB ──────────────────────────────────────
 
 def construir_knowledge_base() -> dict:
     """
@@ -316,23 +581,67 @@ def construir_knowledge_base() -> dict:
                 chunks_web.append(resultado)
                 kb["_fuentes"].append({"tipo": "web", "url": url})
 
-    # ── Paso 4: ensamblado ────────────────────────────────────
+    # ── Paso 4: Excel tabular ─────────────────────────────────
+    productos_excel = []
+
+    if DATA_DIR.exists():
+        excels = sorted(DATA_DIR.glob("*.xlsx"))
+        print(f"\n📊 Excels encontrados: {len(excels)}")
+
+        for xlsx_path in excels:
+            prods_excel = procesar_excel_productos(xlsx_path)
+            productos_excel.extend(prods_excel)
+            kb["_fuentes"].append({
+                "tipo": "excel",
+                "archivo": xlsx_path.name,
+                "productos": len(prods_excel)
+            })
+    else:
+        print(f"\n⚠️  Carpeta {DATA_DIR} no encontrada — sin Excel tabular")
+
+    # ── Paso 5: ensamblado ────────────────────────────────────
     # Productos: combinamos los existentes en la base + los extraídos de PDFs
     # Los de la base tienen prioridad (son curados manualmente)
     productos_base = kb.get("productos", [])
-    skus_base = {p["sku"] for p in productos_base}
-    
-    # Solo agregamos los extraídos automáticamente si no están ya en la base
-    productos_nuevos = [p for p in productos_extraidos if p["sku"] not in skus_base]
-    if productos_nuevos:
-        print(f"\n✨ {len(productos_nuevos)} productos nuevos detectados en PDFs")
-    
-    kb["productos"] = productos_base + productos_nuevos
+
+    skus_base = {
+        str(p.get("sku", "")).strip()
+        for p in productos_base
+        if str(p.get("sku", "")).strip()
+    }
+
+    # Productos detectados automáticamente en PDFs.
+    productos_nuevos_pdf = [
+        p for p in productos_extraidos
+        if str(p.get("sku", "")).strip()
+        and str(p.get("sku", "")).strip() not in skus_base
+    ]
+
+    if productos_nuevos_pdf:
+        print(f"\n✨ {len(productos_nuevos_pdf)} productos nuevos detectados en PDFs")
+
+    productos_pre_excel = productos_base + productos_nuevos_pdf
+
+    # Excel: enriquece productos existentes por nombre y agrega los nuevos.
+    productos_finales, excel_actualizados, excel_agregados = merge_productos_excel(
+        productos_pre_excel,
+        productos_excel
+    )
+
+    kb["productos"] = productos_finales
     kb["_chunks_pdf"] = chunks_pdf
     kb["_chunks_web"] = chunks_web
+    kb["_chunks_excel"] = [{
+        "archivo": f.get("archivo"),
+        "productos": f.get("productos")
+    } for f in kb["_fuentes"] if f.get("tipo") == "excel"]
     
     print(f"\n📊 Resumen:")
-    print(f"   Productos: {len(kb['productos'])} ({len(productos_base)} base + {len(productos_nuevos)} nuevos)")
+    print(f"   Productos finales: {len(kb['productos'])}")
+    print(f"   Productos base: {len(productos_base)}")
+    print(f"   Productos nuevos desde PDF: {len(productos_nuevos_pdf)}")
+    print(f"   Productos enriquecidos desde Excel: {excel_actualizados}")
+    print(f"   Productos nuevos desde Excel: {excel_agregados}")
     print(f"   Chunks PDF: {len(chunks_pdf)}")
     print(f"   Chunks web: {len(chunks_web)}")
     print(f"   Fuentes totales: {len(kb['_fuentes'])}")
@@ -340,7 +649,7 @@ def construir_knowledge_base() -> dict:
     return kb
 
 
-# ── 5. Main ───────────────────────────────────────────────────
+# ── 6. Main ───────────────────────────────────────────────────
 
 if __name__ == "__main__":
     kb = construir_knowledge_base()

@@ -1,0 +1,85 @@
+{
+  "version": "2026-09-30",
+  "destinos": {
+    "ventas_b2b": "tzordan@doctorchoice.cl",
+    "tienda_online": "url_tienda_online_del_producto",
+    "postventa": "https://doctorchoice-596346556452951866.myfreshworks.com/crm/sales/web_forms/ab2299929bb044f6909ee3ad6118afb1c431f490146c81184439e63f4a5db487/form.html",
+    "nurturing": "registrar_interes_y_continuar_calificacion",
+    "informacion_reembolso": "respuesta_aprobada_commercial_policy"
+  },
+  "routing": [
+    {
+      "id": "reembolso_cobertura",
+      "tipo_cliente": "cualquiera",
+      "intencion": "reembolso_cobertura",
+      "condicion": "isapre_seguro_complementario_codigo_reembolso_bonificacion_cobertura",
+      "canal_recomendado": "informacion_reembolso",
+      "accion": "responder_texto_reembolso_aprobado_sin_derivar_postventa"
+    },
+    {
+      "id": "particular_tienda_online",
+      "tipo_cliente": "particular",
+      "intencion": "compra_producto",
+      "condicion": "producto_con_url_tienda_online",
+      "canal_recomendado": "tienda_online",
+      "accion": "enviar_link_tienda_y_recordar_compra_online"
+    },
+    {
+      "id": "particular_sin_tienda",
+      "tipo_cliente": "particular",
+      "intencion": "compra_producto",
+      "condicion": "producto_sin_url_tienda_online_o_necesidad_no_clara",
+      "canal_recomendado": "ventas_b2b",
+      "accion": "capturar_contacto_y_derivar_tzordan"
+    },
+    {
+      "id": "profesional_compra_rapida_tienda",
+      "tipo_cliente": "profesional_independiente",
+      "intencion": "compra_rapida",
+      "condicion": "producto_con_url_tienda_online_y_sin_requerimiento_de_cotizacion",
+      "canal_recomendado": "tienda_online",
+      "accion": "enviar_link_tienda_si_existe"
+    },
+    {
+      "id": "profesional_cotizacion",
+      "tipo_cliente": "profesional_salud",
+      "intencion": "cotizacion",
+      "condicion": "cotiza_o_requiere_representante",
+      "canal_recomendado": "ventas_b2b",
+      "accion": "capturar_contacto_y_derivar_tzordan"
+    },
+    {
+      "id": "institucion_cotizacion",
+      "tipo_cliente": "institucion",
+      "intencion": "cotizacion",
+      "condicion": "clinica_hospital_centro_institucion",
+      "canal_recomendado": "ventas_b2b",
+      "accion": "capturar_institucion_contacto_y_derivar_tzordan"
+    },
+    {
+      "id": "licitacion",
+      "tipo_cliente": "licitacion",
+      "intencion": "licitacion",
+      "condicion": "licitacion_concurso_proyecto_institucional",
+      "canal_recomendado": "ventas_b2b",
+      "accion": "capturar_datos_licitacion_y_derivar_tzordan"
+    },
+    {
+      "id": "postventa_soporte",
+      "tipo_cliente": "postventa",
+      "intencion": "postventa",
+      "condicion": "garantia_falla_reparacion_seguimiento_servicio_tecnico_devolucion_producto",
+      "canal_recomendado": "postventa",
+      "accion": "derivar_formulario_soporte",
+      "nota": "No incluye consultas de reembolso Isapre/seguro."
+    },
+    {
+      "id": "desconocido_calificar",
+      "tipo_cliente": "desconocido",
+      "intencion": "consulta_producto",
+      "condicion": "datos_insuficientes",
+      "canal_recomendado": "nurturing",
+      "accion": "hacer_una_pregunta_de_calificacion"
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "version": "2026-09-30",
+  "objetivo": "Validar política comercial, routing y restricciones de José.",
+  "casos": [
+    {
+      "id": "precio_no_entregar",
+      "mensaje": "Hola, necesito saber el precio de una rodillera CTi.",
+      "esperado": {
+        "no_debe_contener": [
+          "$",
+          "CLP",
+          "precio referencial",
+          "stock disponible"
+        ],
+        "debe_hacer": "Orientar sin precio y pedir datos para derivar a representante."
+      }
+    },
+    {
+      "id": "stock_no_confirmar",
+      "mensaje": "¿Tienen stock de trotadoras?",
+      "esperado": {
+        "no_debe_contener": [
+          "sí tenemos stock",
+          "disponible",
+          "stock confirmado"
+        ],
+        "debe_hacer": "No confirmar disponibilidad; pedir datos para representante."
+      }
+    },
+    {
+      "id": "particular_tienda_online",
+      "mensaje": "Soy particular y quiero comprar una banda elástica, ¿tienen link?",
+      "esperado": {
+        "canal_recomendado": "tienda_online",
+        "debe_hacer": "Si el producto tiene URL tienda online, compartirla."
+      }
+    },
+    {
+      "id": "institucion_b2b",
+      "mensaje": "Somos una clínica y queremos cotizar equipos para rehabilitación.",
+      "esperado": {
+        "canal_recomendado": "ventas_b2b",
+        "destino_derivacion": "tzordan@doctorchoice.cl",
+        "debe_hacer": "Capturar institución, nombre y contacto."
+      }
+    },
+    {
+      "id": "postventa_soporte",
+      "mensaje": "Compré un equipo y falló, necesito garantía.",
+      "esperado": {
+        "canal_recomendado": "postventa",
+        "debe_hacer": "Derivar al formulario web Soporte."
+      }
+    },
+    {
+      "id": "imagen_no_procesar",
+      "mensaje": "[imagen adjunta sin texto]",
+      "esperado": {
+        "debe_hacer": "Pedir link o descripción breve; no intentar interpretar imagen."
+      }
+    },
+    {
+      "id": "licitacion",
+      "mensaje": "Tenemos una licitación para implementación de equipamiento en un hospital.",
+      "esperado": {
+        "canal_recomendado": "ventas_b2b",
+        "destino_derivacion": "tzordan@doctorchoice.cl",
+        "debe_hacer": "Pedir datos de licitación, institución y contacto."
+      }
+    },
+    {
+      "id": "reembolso_isapre_no_postventa",
+      "mensaje": "¿Esta órtesis tiene reembolso con Isapre?",
+      "esperado": {
+        "canal_recomendado": "informacion_reembolso",
+        "no_debe_hacer": "Derivar a soporte técnico o postventa.",
+        "debe_hacer": "Responder con el texto de reembolso aprobado por el cliente.",
+        "respuesta_exacta": "Sí 😊. Contamos con diversos productos que poseen códigos de reembolso, principalmente en las categorías de órtesis cervicales, rodilla, tobillo-pie, mano-muñeca, férulas para dedos, órtesis para pies, plantillas ortopédicas, bastones, cables y electrodos.\n\nEl código de reembolso se incluye en la factura, la cual puede presentar junto con su receta médica ante su Isapre, seguro complementario o institución beneficiadora. La cobertura y aprobación del reembolso dependerán de las condiciones de cada entidad. ✅"
+      }
+    },
+    {
+      "id": "contacto_invalido",
+      "mensaje": "Mi teléfono es 123456789012345 y mi correo es fabianoptimizaid.com",
+      "esperado": {
+        "debe_hacer": "Detectar datos de contacto inválidos y pedir corrección antes de confirmar registro."
+      }
+    },
+    {
+      "id": "postventa_sin_recepcion_ni_eta",
+      "mensaje": "Mi equipo falló y necesito garantía. ¿Con quién hablo?",
+      "esperado": {
+        "canal_recomendado": "postventa",
+        "debe_hacer": "Compartir el formulario oficial Soporte.",
+        "no_debe_hacer": "Derivar a recepción ni prometer respuesta hoy."
+      }
+    },
+    {
+      "id": "red_social_oficial",
+      "mensaje": "¿Cuál es su Instagram?",
+      "esperado": {
+        "debe_contener": "https://www.instagram.com/doctorschoice_chile/",
+        "no_debe_hacer": "Inventar un usuario o red social."
+      }
+    },
+    {
+      "id": "alternativas_despues_calificar",
+      "mensaje": "Soy kinesiólogo y busco alternativas para rehabilitación de mano post ACV. ¿Qué opciones tienen?",
+      "esperado": {
+        "debe_hacer": "Después de calificar suficiente contexto, puede presentar hasta 3 alternativas pertinentes con diferencias breves."
+      }
+    },
+    {
+      "id": "particular_tienda_link_directo",
+      "mensaje": "Soy particular y quiero comprar una órtesis de pie caído. ¿Me mandas el link?",
+      "esperado": {
+        "canal_recomendado": "tienda_online",
+        "debe_hacer": "Priorizar productos con URL de tienda online y compartir el link directo cuando exista."
+      }
+    }
+  ]
+}

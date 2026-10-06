@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'pdfs/**'
+      - 'data/**'
       - 'urls.txt'
       - 'build_kb.py'
       - 'brandbook.json'
@@ -21,7 +22,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install pdfplumber requests beautifulsoup4
+        run:  pip install -r requirements.txt
 
       - name: Build knowledge base
         run: python build_kb.py
